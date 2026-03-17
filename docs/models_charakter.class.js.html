@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/charakter.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/charakter.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Repräsentiert die Hauptfigur (Pepe) und steuert deren Status, Eingaben und Animationen.
+ */
+class Character extends MovableObject {
+  height = 280;
+  width = 250;
+  y = 80;
+  speed = 3;
+  otherDirection = false;
+  isShooting = false;
+  isFlying = false;
+  isUpsideDown = false;
+  isRotating = false;
+  currentWeapon = 'shotgun'; // Startwaffe: 'shotgun', 'uzi' oder 'broom'
+  isUziForward = false;
+  isUziBackward = false;
+  isUziCircle = false;
+  hasUzi = false; // Flag, falls du später zwischen Gatling und Uzi wechseln willst
+  bottles = 0; // Anzahl gesammelter Salsa-Flaschen
+  impaledChicken = false; 
+  shotsWithChicken = 0; 
+  isWheelUp = false;
+  isWheelDown = false;
+  worldAngle = 0;
+  offset = {
+    top: 120,
+    bottom: 30,
+    left: 40,
+    right: 30,
+  };
+
+  IMAGES_WALKING = [
+    "img/2_character_pepe/2_walk/W-21.png",
+    "img/2_character_pepe/2_walk/W-22.png",
+    "img/2_character_pepe/2_walk/W-23.png",
+    "img/2_character_pepe/2_walk/W-24.png",
+    "img/2_character_pepe/2_walk/W-25.png",
+    "img/2_character_pepe/2_walk/W-26.png",
+  ];
+
+  IMAGES_IDLE = [
+    "img/2_character_pepe/1_idle/idle/I-1.png",
+    "img/2_character_pepe/1_idle/idle/I-2.png",
+    "img/2_character_pepe/1_idle/idle/I-3.png",
+    "img/2_character_pepe/1_idle/idle/I-4.png",
+    "img/2_character_pepe/1_idle/idle/I-5.png",
+    "img/2_character_pepe/1_idle/idle/I-6.png",
+    "img/2_character_pepe/1_idle/idle/I-7.png",
+    "img/2_character_pepe/1_idle/idle/I-8.png",
+    "img/2_character_pepe/1_idle/idle/I-9.png",
+    "img/2_character_pepe/1_idle/idle/I-10.png",
+  ];
+
+  IMAGES_JUMPING = [
+    "img/2_character_pepe/3_jump/J-31.png",
+    "img/2_character_pepe/3_jump/J-32.png",
+    "img/2_character_pepe/3_jump/J-33.png",
+    "img/2_character_pepe/3_jump/J-34.png",
+    "img/2_character_pepe/3_jump/J-35.png",
+    "img/2_character_pepe/3_jump/J-36.png",
+    "img/2_character_pepe/3_jump/J-37.png",
+    "img/2_character_pepe/3_jump/J-38.png",
+    "img/2_character_pepe/3_jump/J-39.png",
+  ];
+
+  IMAGES_SHOOTING = [
+    "img/2_character_pepe/6_shooting/1.png",
+    "img/2_character_pepe/6_shooting/2.png",
+    "img/2_character_pepe/6_shooting/3.png",
+    "img/2_character_pepe/6_shooting/4.png",
+    "img/2_character_pepe/6_shooting/5.png",
+  ];
+
+  IMAGES_UZI_FORWARD = [
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/01.png", // Zielt
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/00.png", // Schießt
+  ];
+  IMAGES_UZI_BACKWARD = [
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/03.png", // Nicht schießen
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/02.png", // Schießen
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/05.png", // Nicht schießen
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/04.png", // Schießen
+  ];
+  IMAGES_UZI_CIRCLE = [
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/07.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/08.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/09.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/10.png",
+  ];
+
+  IMAGES_FLYING = ["img/2_character_pepe/8_flying/fly/fly.png"];
+  IMAGES_FLYING_FIRE = [
+    "img/2_character_pepe/8_flying/flyfire/1.png",
+    "img/2_character_pepe/8_flying/flyfire/2.png",
+    "img/2_character_pepe/8_flying/flyfire/4.png",
+    "img/2_character_pepe/8_flying/flyfire/5.png",
+  ];
+  IMAGES_FLYING_UP = ["img/2_character_pepe/8_flying/fly/up.png"];
+  IMAGES_FLYING_DOWN = ["img/2_character_pepe/8_flying/fly/down.png"];
+  IMAGES_ROTATION = [
+    "img/2_character_pepe/8_flying/dreh/1d.png",
+    "img/2_character_pepe/8_flying/dreh/2d.png",
+    "img/2_character_pepe/8_flying/dreh/3d.png",
+    "img/2_character_pepe/8_flying/dreh/4d.png",
+    "img/2_character_pepe/8_flying/dreh/5d.png",
+  ];
+
+  IMPALED_CHICKEN_IMAGES = [
+    
+    "img/3_enemies_chicken/chicken_sven/3_shot/1.png",
+    "img/3_enemies_chicken/chicken_sven/3_shot/2.png",
+  ];
+
+  IMAGES_WHEEL_UP = [
+    "img/2_character_pepe/8_flying/wheel/1.png",
+    "img/2_character_pepe/8_flying/wheel/2.png",
+    "img/2_character_pepe/8_flying/wheel/3.png",
+    "img/2_character_pepe/8_flying/wheel/4.png",
+  ];
+  IMAGES_WHEEL_DOWN = [
+    "img/2_character_pepe/8_flying/wheelfire/1d.png",
+    "img/2_character_pepe/8_flying/wheelfire/2d.png",
+    "img/2_character_pepe/8_flying/wheelfire/3d.png",
+    "img/2_character_pepe/8_flying/wheelfire/4d.png",
+    "img/2_character_pepe/8_flying/wheelfire/5d.png",
+  ];
+
+  IMAGES_HURT = [
+    "img/2_character_pepe/4_hurt/H-41.png",
+    "img/2_character_pepe/4_hurt/H-42.png",
+    "img/2_character_pepe/4_hurt/H-43.png",
+  ];
+
+  IMAGES_DEAD = [
+    "img/2_character_pepe/5_dead/D-51.png",
+    "img/2_character_pepe/5_dead/D-52.png",
+    "img/2_character_pepe/5_dead/D-53.png",
+    "img/2_character_pepe/5_dead/D-54.png",
+    "img/2_character_pepe/5_dead/D-55.png",
+    "img/2_character_pepe/5_dead/D-56.png",
+    "img/2_character_pepe/5_dead/D-57.png",
+  ];
+
+  jump_sound = new Audio("audio/jump.mp3");
+  hurt_sound = new Audio("audio/hurt.mp3");
+  broom_sound = new Audio("audio/besenpower.mp3");
+
+  constructor() {
+    super();
+    this.loadImage("img/2_character_pepe/1_idle/idle/I-1.png");
+    this.loadImages(this.IMAGES_IDLE);
+    this.loadImages(this.IMAGES_FLYING_FIRE);
+    this.broom_sound.loop = true;
+    this.loadImages(this.IMAGES_FLYING_UP);
+    this.loadImages(this.IMAGES_FLYING_DOWN);
+    this.loadImages(this.IMAGES_ROTATION);
+    this.loadImages(this.IMAGES_WHEEL_UP);
+    this.loadImages(this.IMAGES_WHEEL_DOWN);
+    this.loadImages(this.IMPALED_CHICKEN_IMAGES);
+    this.loadImages(this.IMAGES_UZI_FORWARD);
+    this.loadImages(this.IMAGES_UZI_BACKWARD);
+    this.loadImages(this.IMAGES_UZI_CIRCLE);
+    this.applyGravity();
+    this.animate();
+  }
+
+  /**
+   * Startet die kontinuierliche Abfrage von Bewegungen und das Abspielen der jeweiligen Animationen.
+   */
+  animate() {
+    setInterval(() => {
+      if (this.isFlying) {
+        // Mit rechter Maustaste (zugeordnet zu SPACE) in Blickrichtung fliegen
+        if (this.world &amp;&amp; this.world.keyboard.SPACE) {
+          this.x += Math.cos(this.worldAngle) * this.speed * 2; // Schneller fliegen
+          this.y += Math.sin(this.worldAngle) * this.speed * 2;
+        }
+      } else {
+        // Normale Bodenbewegung
+        if (this.world &amp;&amp; this.world.keyboard.RIGHT) {
+          this.x += this.speed;
+          this.otherDirection = false;
+        }
+        if (this.world &amp;&amp; this.world.keyboard.LEFT) {
+          this.x -= this.speed;
+          this.otherDirection = true;
+        }
+        if (this.world &amp;&amp; this.world.keyboard.SPACE &amp;&amp; !this.isAboveGround()) {
+          this.jump();
+        }
+      }
+    }, 1000 / 60);
+
+    setInterval(() => {
+      if (this.isDead()) {
+        this.playAnimation(this.IMAGES_DEAD);
+      } else if (this.isHurt()) {
+        this.playAnimation(this.IMAGES_HURT);
+      } else if (this.isFlying) {
+        if (this.isWheelUp) {
+          this.playAnimation(this.IMAGES_WHEEL_UP);
+        } else if (this.isWheelDown) {
+          this.playAnimation(this.IMAGES_WHEEL_DOWN);
+        } else if (this.isRotating) {
+          this.playAnimation(this.IMAGES_ROTATION);
+        } else if (this.isShooting) {
+          this.playAnimation(this.IMAGES_FLYING_FIRE);
+        } else if (this.world &amp;&amp; this.world.keyboard.SPACE) {
+          const verticalDirection = Math.sin(this.worldAngle);
+          if (verticalDirection &lt; -0.1) {
+            this.playAnimation(this.IMAGES_FLYING_UP);
+          } else if (verticalDirection > 0.1) {
+            this.playAnimation(this.IMAGES_FLYING_DOWN);
+          } else {
+            this.playAnimation(this.IMAGES_FLYING);
+          }
+        } else {
+          this.playAnimation(this.IMAGES_FLYING);
+        }
+      } else if (this.isAboveGround()) {
+        this.playAnimation(this.IMAGES_JUMPING);
+      } else if (this.isUziCircle) {
+        this.playAnimation(this.IMAGES_UZI_CIRCLE);
+      } else if (this.isUziBackward) {
+        this.playAnimation(this.IMAGES_UZI_BACKWARD);
+      } else if (this.isUziForward) {
+        this.playAnimation(this.IMAGES_UZI_FORWARD);
+      } else if (this.isShooting) {
+        this.playAnimation(this.IMAGES_SHOOTING);
+      } else if (
+        this.world &amp;&amp;
+        (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)
+      ) {
+        this.playAnimation(this.IMAGES_WALKING);
+      } else {
+        this.playAnimation(this.IMAGES_IDLE);
+      }
+    }, 100);
+  }
+
+  /**
+   * Lässt den Charakter springen.
+   */
+  jump() {
+    this.speedY = 30;
+    this.jump_sound.play().catch(() => {});
+  }
+
+  /**
+   * Zieht bei einem Treffer Energie ab und spielt einen Sound ab.
+   */
+  hit() {
+    this.hurt_sound.play().catch(() => {});
+    super.hit();
+  }
+
+  /**
+   * Aktualisiert die Spiellautstärke für die Effekte des Charakters.
+   * @param {number} volume - Lautstärkewert (0.0 bis 1.0).
+   */
+  updateVolume(volume) {
+    this.jump_sound.volume = volume;
+    this.hurt_sound.volume = volume;
+    this.broom_sound.volume = volume;
+  }
+
+  /**
+   * Führt einen Standard-Schuss aus, sofern kein Cooldown aktiv ist.
+   * @returns {boolean} True, wenn erfolgreich geschossen wurde.
+   */
+  shoot() {
+    if (!this.isShooting) {
+      this.isShooting = true;
+      this.currentImage = 0;
+
+      setTimeout(() => {
+        this.isShooting = false;
+      }, 500);
+      return true;
+    }
+  }
+
+  /**
+   * Löst eine Feuerrad-Animation auf dem Besen aus (auf oder ab).
+   * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
+   */
+  triggerWheelAnimation(deltaY) {
+    // Verhindert Neustart, wenn Animation noch läuft
+    if (this.isWheelUp || this.isWheelDown || this.isRotating) return;
+
+    this.currentImage = 0;
+    if (deltaY &lt; 0) {
+      // Scroll nach oben (negative deltaY)
+      this.isWheelUp = true;
+      setTimeout(() => (this.isWheelUp = false), 400); // 4 Bilder * 100ms
+    } else {
+      // Scroll nach unten (positive deltaY)
+      this.isWheelDown = true;
+      setTimeout(() => (this.isWheelDown = false), 500); // 5 Bilder * 100ms
+    }
+  }
+
+  rotate() {
+    if (!this.isRotating) {
+      this.isRotating = true;
+      this.currentImage = 0;
+      setTimeout(() => {
+        this.isRotating = false;
+        this.isUpsideDown = false;
+      }, 1900);
+    }
+  }
+
+  toggleFlying() {
+    this.isFlying = !this.isFlying;
+    if (!this.isFlying) {
+      // Stellt sicher, dass der Zustand beim Landen korrekt ist
+      this.angle = 0;
+      this.currentImage = 0;
+      this.broom_sound.pause();
+    } else {
+      if (this.world) this.broom_sound.volume = this.world.volume;
+      this.broom_sound.play().catch(() => {});
+    }
+  }
+
+  shootUziForward() {
+    if (!this.isUziForward) {
+      this.isUziForward = true;
+      this.currentImage = 0;
+      setTimeout(() => { this.isUziForward = false; }, 200);
+    }
+  }
+
+  shootUziBackward() {
+    if (!this.isUziBackward) {
+      this.isUziBackward = true;
+      this.currentImage = 0;
+      // Die Dauer ist hier etwas länger, da es 4 Bilder sind
+      setTimeout(() => { this.isUziBackward = false; }, 400);
+    }
+  }
+
+  shootUziCircle() {
+    if (!this.isUziCircle) {
+      this.isUziCircle = true;
+      this.currentImage = 0;
+      setTimeout(() => { this.isUziCircle = false; }, 400);
+    }
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/endboss.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/endboss.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Repräsentiert den Endgegner.
+ */
+class Endboss extends MovableObject {
+  height = 400;
+  width = 250;
+  y = 55;
+  speed = 2.5;
+
+  IMAGES_ALERT = [
+    "img/4_enemie_boss_chicken/2_alert/G5.png",
+    "img/4_enemie_boss_chicken/2_alert/G6.png",
+    "img/4_enemie_boss_chicken/2_alert/G7.png",
+    "img/4_enemie_boss_chicken/2_alert/G8.png",
+    "img/4_enemie_boss_chicken/2_alert/G9.png",
+    "img/4_enemie_boss_chicken/2_alert/G10.png",
+    "img/4_enemie_boss_chicken/2_alert/G11.png",
+    "img/4_enemie_boss_chicken/2_alert/G12.png",
+  ];
+
+  IMAGES_HURT = [
+    "img/4_enemie_boss_chicken/4_hurt/G21.png",
+    "img/4_enemie_boss_chicken/4_hurt/G22.png",
+    "img/4_enemie_boss_chicken/4_hurt/G23.png",
+  ];
+
+  IMAGES_ATTACK = [
+    "img/4_enemie_boss_chicken/3_attack/G13.png",
+    "img/4_enemie_boss_chicken/3_attack/G14.png",
+    "img/4_enemie_boss_chicken/3_attack/G15.png",
+    "img/4_enemie_boss_chicken/3_attack/G16.png",
+    "img/4_enemie_boss_chicken/3_attack/G17.png",
+    "img/4_enemie_boss_chicken/3_attack/G18.png",
+    "img/4_enemie_boss_chicken/3_attack/G19.png",
+    "img/4_enemie_boss_chicken/3_attack/G20.png",
+  ];
+
+  IMAGES_DEAD = [
+    "img/4_enemie_boss_chicken/5_dead/G24.png",
+    "img/4_enemie_boss_chicken/5_dead/G25.png",
+    "img/4_enemie_boss_chicken/5_dead/G26.png",
+  ];
+
+  attack_sound = new Audio("audio/boss_attack.mp3");
+  dead_sound = new Audio("audio/boss_dead.mp3");
+  playedDeathSound = false;
+
+  constructor() {
+    super();
+    this.loadImage(this.IMAGES_ALERT[0]);
+    this.x = 2500;
+    this.energy = 100;
+    this.animate();
+  }
+
+  animate() {
+    setInterval(() => {
+      if (
+        this.world &amp;&amp;
+        this.world.character &amp;&amp;
+        !this.isHurt() &amp;&amp;
+        !this.isDead()
+      ) {
+        this.moveTowardsPepe();
+      }
+    }, 1000 / 60);
+
+    setInterval(() => {
+      if (this.isDead()) {
+        this.playAnimation(this.IMAGES_DEAD);
+        if (!this.playedDeathSound) {
+          this.dead_sound.play().catch(() => {});
+          this.playedDeathSound = true;
+        }
+      } else if (this.isHurt()) {
+        this.playAnimation(this.IMAGES_HURT);
+      } else if (this.world &amp;&amp; this.world.character &amp;&amp; this.isPlayerClose()) {
+        this.playAnimation(this.IMAGES_ATTACK);
+
+        if (this.attack_sound.paused) {
+          this.attack_sound.play().catch(() => {});
+        }
+      } else {
+        this.playAnimation(this.IMAGES_ALERT);
+      }
+    }, 200);
+  }
+
+  updateVolume(volume) {
+    this.attack_sound.volume = volume;
+    this.dead_sound.volume = volume;
+  }
+
+  /**
+   * Bewegt den Boss in Richtung des Spielers.
+   */
+  moveTowardsPepe() {
+    if (this.x > this.world.character.x) {
+      this.x -= this.speed;
+      this.otherDirection = false;
+    } else {
+      this.x += this.speed;
+      this.otherDirection = true;
+    }
+  }
+
+  /**
+   * Prüft, ob der Spieler nah genug für einen Angriff ist.
+   * @returns {boolean} True, wenn Spieler in Reichweite.
+   */
+  isPlayerClose() {
+    if (!this.world || !this.world.character) return false;
+    return Math.abs(this.x - this.world.character.x) &lt; 900;
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Mar 04 2026 11:33:25 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

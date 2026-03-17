@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: game.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: game.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>let canvas;
+let world;
+let crosshair;
+let keyboard = {
+  RIGHT: false,
+  LEFT: false,
+  UP: false,
+  DOWN: false,
+  SPACE: false,
+  D: false,
+  F: false,
+  U: false,
+  S: false,
+  B: false,
+};
+
+let menu_sound = new Audio("audio/menu.mp3");
+let background_sound = new Audio("audio/hauptspiel.wav");
+let mousePosition = { x: 0, y: 0 };
+
+let globalVolume = 0.5;
+let isMuted = false;
+let tempScore = 0;
+let gamePaused = false;
+let intervalIds = [];
+let currentPlayerName = "Anonym";
+
+const originalSetInterval = window.setInterval;
+const originalClearInterval = window.clearInterval;
+
+// Wrapper für setInterval, um alle Intervalle global verwalten und stoppen zu können
+window.setInterval = (fn, delay) => {
+  const id = originalSetInterval(() => {
+    if (!gamePaused) {
+      fn();
+    }
+  }, delay);
+  intervalIds.push(id);
+  return id;
+};
+
+window.clearInterval = (id) => {
+  originalClearInterval(id);
+  intervalIds = intervalIds.filter((storedId) => storedId !== id);
+};
+
+/**
+ * Entsperrt ein Audio-Objekt durch stummes Anspielen beim Klick (wichtig für Safari/Mobile).
+ */
+function unlockAudio(audio) {
+  audio.volume = 0;
+  let playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      })
+      .catch(() => {});
+  }
+}
+
+/**
+ * Initialisiert das Spiel, lädt HTML-Templates und startet den Preloader.
+ */
+function init() {
+  canvas = document.getElementById("canvas");
+  crosshair = document.getElementById("crosshair");
+  document
+    .getElementById("game-container")
+    .insertAdjacentHTML("beforeend", renderOverlay());
+
+  if (isMobile()) {
+    document
+      .getElementById("game-container")
+      .insertAdjacentHTML("beforeend", renderTouchControls());
+  }
+
+  document.getElementById("overlay-container").innerHTML = renderAllScreens();
+
+  // Ladebildschirm einfügen und Preloading starten
+  document
+    .getElementById("overlay-container")
+    .insertAdjacentHTML("beforeend", renderLoadingScreen());
+  startPreloading();
+
+  document.addEventListener("fullscreenchange", () => {
+    let icons = [
+      document.getElementById("fullscreenIcon"),
+      document.getElementById("fullscreenIconStart"),
+    ];
+    let isFullscreen = document.fullscreenElement;
+    let enterIcon = `&lt;svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 0 24 24" width="30px" fill="#FFFFFF">&lt;path d="M0 0h24v24H0V0z" fill="none"/>&lt;path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>&lt;/svg>`;
+    let exitIcon = `&lt;svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 0 24 24" width="30px" fill="#FFFFFF">&lt;path d="M0 0h24v24H0V0z" fill="none"/>&lt;path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>&lt;/svg>`;
+
+    icons.forEach((icon) => {
+      if (icon) {
+        icon.innerHTML = isFullscreen ? exitIcon : enterIcon;
+      }
+    });
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    let rect = canvas.getBoundingClientRect();
+    mousePosition.x = e.clientX - rect.left;
+    mousePosition.y = e.clientY - rect.top;
+
+    if (crosshair &amp;&amp; crosshair.style.display === "block") {
+      // Center the crosshair on the mouse position
+      crosshair.style.left = mousePosition.x - crosshair.offsetWidth / 2 + "px";
+      crosshair.style.top = mousePosition.y - crosshair.offsetHeight / 2 + "px";
+    }
+  });
+
+  if (isMobile()) {
+    bindTouchEvents();
+  }
+
+  menu_sound.loop = true;
+  menu_sound.volume = isMuted ? 0 : globalVolume;
+  menu_sound.play().catch((error) => {
+    console.log(
+      "Autoplay wurde blockiert - Musik startet erst nach Interaktion",
+    );
+  });
+}
+
+/**
+ * Prüft, ob das Gerät ein mobiles Gerät ist.
+ * @returns {boolean} True bei mobilem User-Agent.
+ */
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  );
+}
+
+/**
+ * Bindet Touch-Events für die mobile Steuerung an die Buttons.
+ */
+function bindTouchEvents() {
+  const bindBtn = (id, key) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      keyboard[key] = true;
+    });
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      keyboard[key] = false;
+    });
+  };
+
+  bindBtn("btnLeft", "LEFT");
+  bindBtn("btnRight", "RIGHT");
+  bindBtn("btnJump", "SPACE");
+  bindBtn("btnShoot", "D");
+  bindBtn("btnThrow", "S"); // Salsa werfen
+
+  // Hilfsfunktion für Buttons, die keine Taste gedrückt halten, sondern direkt eine Aktion ausführen
+  const bindAction = (id, action) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      action();
+    });
+  };
+
+  bindAction("btnUzi", () => {
+    if (world &amp;&amp; world.character) {
+      world.character.currentWeapon = "uzi";
+      if (world.character.isFlying) world.character.toggleFlying();
+    }
+  });
+
+  bindAction("btnShotgun", () => {
+    if (world &amp;&amp; world.character) {
+      world.character.currentWeapon = "shotgun";
+      if (world.character.isFlying) world.character.toggleFlying();
+    }
+  });
+
+  bindAction("btnBroom", () => {
+    if (world &amp;&amp; world.character) {
+      if (world.character.isFlying) {
+        world.character.toggleFlying();
+        world.character.currentWeapon = "shotgun";
+      } else if (world.coinBar.percentage > 0) {
+        world.character.currentWeapon = "broom";
+        world.character.toggleFlying();
+      }
+    }
+  });
+
+  bindAction("btnSpecial", () => {
+    if (world &amp;&amp; world.character) {
+      if (world.character.isFlying) {
+        // Triggert auf dem Besen das Rad/Feuer (simuliert Mausrad nach unten)
+        world.character.triggerWheelAnimation(100);
+      } else if (world.character.currentWeapon === "uzi") {
+        // Triggert am Boden den 360° Uzi-Angriff
+        world.triggerUziCircleAttack();
+      }
+    }
+  });
+}
+
+/**
+ * Startet das eigentliche Spiel (erstellt die World-Instanz).
+ */
+function startGame() {
+  let inputName = document.getElementById("startNameInput").value;
+  if (inputName &amp;&amp; inputName.trim() !== "") {
+    currentPlayerName = inputName.trim();
+  }
+
+  menu_sound.pause();
+  unlockAudio(background_sound); // Entsperrt die Musik direkt beim Klick
+  document.getElementById("startScreen").style.display = "none";
+
+  showStoryScreen();
+}
+
+/**
+ * Zeigt den Story-Textbildschirm an, bevor das Intro-Video und das Spiel starten.
+ */
+function showStoryScreen() {
+  let container = document.getElementById("game-container");
+  let storyScreen = document.getElementById("storyScreen");
+
+  if (!storyScreen) {
+    storyScreen = document.createElement("div");
+    storyScreen.id = "storyScreen";
+    storyScreen.style.position = "absolute";
+    storyScreen.style.left = "0";
+    storyScreen.style.top = "0";
+    storyScreen.style.width = "100%";
+    storyScreen.style.height = "100%";
+    storyScreen.style.backgroundColor = "black";
+    storyScreen.style.zIndex = "100";
+    storyScreen.style.display = "flex";
+    storyScreen.style.flexDirection = "column";
+    storyScreen.style.justifyContent = "center";
+    storyScreen.style.alignItems = "center";
+    storyScreen.style.padding = "40px";
+    storyScreen.style.boxSizing = "border-box";
+    storyScreen.style.textAlign = "center";
+
+    storyScreen.innerHTML = `
+      &lt;div style="background-color: rgba(60, 60, 60, 0.95); padding: 30px; border-radius: 20px; border: 2px solid white; max-width: 700px; max-height: 90%; overflow-y: auto; box-shadow: 0 0 20px black; display: flex; flex-direction: column; align-items: center;">
+        &lt;h2 style="color: orange; font-family: sans-serif; font-size: 28px; margin-top: 0; margin-bottom: 20px;">Pepe und der Raub der La Puta Perdita Durango&lt;/h2>
+        &lt;p style="color: white; font-family: sans-serif; font-size: 16px; line-height: 1.5; margin-bottom: 30px; white-space: pre-line; text-align: left;">
+In der trockende Wüste von Memegard lebte Pepe, ein Mann von edler Gestalt und melancholischem Blick. Sein Herz gehörte einzig und allein der wunderschönen La Puta Perdita Durango. Ihr Name klang wie ein Sommergedicht, ihre Anwesenheit war wie das sanfte Quaken im Mondschein. Doch die Idylle wurde jäh zerstört.
+
+Die Entführung
+
+Das Böse Oberhuhn, ein gefiedertes Monstrum mit einer Krone aus Maiskolben und einem Blick, der Steine zu Rührei verwandeln konnte, hatte La Puta Perdita Durango entführt. Warum? Weil das Oberhuhn ein Faible für schlechte Wortwitze hatte. In seinem Turm aus Eierschalen verkündete es lautstark:
+
+„Diese El Puta Perdita Durango ist einfach viel zu... gut zu vögeln!“
+
+Pepe wusste, was das bedeutete. Das Oberhuhn wollte sie in seinen Harem aus Singvögeln aufnehmen, um sie dort mit unendlichem Gegackere und Körnerfutter zu quälen. Das konnte er nicht zulassen.
+        &lt;/p>
+        &lt;button id="proceedToIntroBtn" class="menu-btn" style="background-color: orange; color: white; border: none; padding: 15px 30px; font-size: 20px; border-radius: 10px; cursor: pointer;">Zum Intro&lt;/button>
+      &lt;/div>
+    `;
+    container.appendChild(storyScreen);
+
+    document.getElementById("proceedToIntroBtn").onclick = () => {
+      storyScreen.style.display = "none";
+      playIntroVideo(() => {
+        document.getElementById("btnMenu").style.display = "flex";
+        world = new World(canvas, keyboard);
+        showCrosshair();
+        world.updateVolume(isMuted ? 0 : globalVolume);
+        console.log("Spiel gestartet!");
+      });
+    };
+  } else {
+    storyScreen.style.display = "flex";
+  }
+}
+
+/**
+ * Startet das Spiel neu (Reset).
+ */
+function restartGame() {
+  if (world) {
+    world.stopGame();
+    world = null;
+  }
+  clearAllIntervals();
+  document.getElementById("gameOverScreen").style.display = "none";
+  document.getElementById("winScreen").style.display = "none";
+  document.getElementById("newHighscoreMenu").style.display = "none";
+  document.getElementById("btnMenu").style.display = "none";
+  hideCrosshair();
+
+  unlockAudio(background_sound); // Auch beim Neustart absichern
+  playIntroVideo(() => {
+    if (!world) {
+      world = new World(canvas, keyboard);
+      showCrosshair();
+      world.updateVolume(isMuted ? 0 : globalVolume);
+      document.getElementById("btnMenu").style.display = "flex";
+      console.log("Spiel neu gestartet!");
+      gamePaused = false;
+    }
+  });
+}
+
+/**
+ * Spielt das Intro-Video ab und führt danach einen Callback aus.
+ */
+function playIntroVideo(onComplete) {
+  let container = document.getElementById("game-container");
+  let video = document.getElementById("introVideo");
+  let skipBtn = document.getElementById("skipIntroBtn");
+
+  if (!video) {
+    video = document.createElement("video");
+    video.id = "introVideo";
+    video.src = "video/intro.mp4";
+    video.style.position = "absolute";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.zIndex = "100"; // Legt das Video über den Canvas
+    video.style.objectFit = "cover";
+    video.style.pointerEvents = "none"; // Klicks gehen durch das Video ans Spiel
+    container.appendChild(video);
+  }
+
+  if (!skipBtn) {
+    skipBtn = document.createElement("button");
+    skipBtn.id = "skipIntroBtn";
+    skipBtn.innerText = "Intro überspringen ⏭";
+    skipBtn.style.position = "absolute";
+    skipBtn.style.bottom = "30px";
+    skipBtn.style.right = "30px";
+    skipBtn.style.zIndex = "101"; // Über dem Video
+    skipBtn.style.padding = "10px 20px";
+    skipBtn.style.fontSize = "18px";
+    skipBtn.style.fontFamily = "sans-serif";
+    skipBtn.style.color = "white";
+    skipBtn.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
+    skipBtn.style.border = "2px solid white";
+    skipBtn.style.borderRadius = "10px";
+    skipBtn.style.cursor = "pointer";
+    container.appendChild(skipBtn);
+  }
+
+  video.style.display = "block";
+  video.style.opacity = "1";
+  video.currentTime = 0;
+  skipBtn.style.display = "block"; // Button anzeigen
+
+  let finished = false;
+  const finishVideo = () => {
+    if (!finished) {
+      finished = true;
+      video.style.display = "none";
+      skipBtn.style.display = "none"; // Button wieder verstecken
+      onComplete();
+    }
+  };
+
+  skipBtn.onclick = () => {
+    video.pause();
+    video.ontimeupdate = null; // Stoppt das Prüfen
+    finishVideo();
+  };
+
+  video.ontimeupdate = () => {
+    // Pausiere 0.1 Sekunden vor dem Ende, um auf dem letzten Bild stehen zu bleiben
+    if (video.duration &amp;&amp; video.currentTime >= video.duration - 0.1) {
+      video.pause();
+      video.ontimeupdate = null; // Stoppt das Prüfen
+      finishVideo();
+    }
+  };
+
+  video.onerror = finishVideo;
+  video.onended = finishVideo; // Extra-Sicherung
+
+  video.play().catch((e) => {
+    console.warn("Video konnte nicht automatisch starten:", e);
+    finishVideo();
+  });
+}
+
+/**
+ * Startet das Outro-Video und kehrt danach zum Menü zurück.
+ */
+function playOutroVideoAndRestart() {
+  document.getElementById("winScreen").style.display = "none";
+  playOutroVideo(() => {
+    backToMenu(); // Kehrt ins Hauptmenü zurück, wenn das Video fertig ist
+  });
+}
+
+/**
+ * Spielt das Outro-Video ab und führt danach einen Callback aus.
+ */
+function playOutroVideo(onComplete) {
+  let container = document.getElementById("game-container");
+  let video = document.getElementById("outroVideo");
+  let skipBtn = document.getElementById("skipOutroBtn");
+
+  if (world &amp;&amp; world.background_sound) {
+    world.background_sound.pause();
+  }
+
+  if (!video) {
+    video = document.createElement("video");
+    video.id = "outroVideo";
+    video.src = "video/win.mp4"; // Dein Schlussvideo
+    video.style.position = "absolute";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.zIndex = "2000"; // Über allem
+    video.style.objectFit = "cover";
+    video.style.pointerEvents = "none"; // Klicks gehen durch das Video
+    container.appendChild(video);
+  }
+
+  if (!skipBtn) {
+    skipBtn = document.createElement("button");
+    skipBtn.id = "skipOutroBtn";
+    skipBtn.innerText = "Video überspringen ⏭";
+    skipBtn.style.position = "absolute";
+    skipBtn.style.bottom = "30px";
+    skipBtn.style.right = "30px";
+    skipBtn.style.zIndex = "2001"; // Über dem Video
+    skipBtn.style.padding = "10px 20px";
+    skipBtn.style.fontSize = "18px";
+    skipBtn.style.fontFamily = "sans-serif";
+    skipBtn.style.color = "white";
+    skipBtn.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
+    skipBtn.style.border = "2px solid white";
+    skipBtn.style.borderRadius = "10px";
+    skipBtn.style.cursor = "pointer";
+    container.appendChild(skipBtn);
+  }
+
+  video.style.display = "block";
+  video.style.opacity = "1";
+  video.currentTime = 0;
+  skipBtn.style.display = "block"; // Button anzeigen
+
+  let finished = false;
+  const finishVideo = () => {
+    if (!finished) {
+      finished = true;
+      video.style.display = "none";
+      skipBtn.style.display = "none"; // Button wieder verstecken
+      if (onComplete) onComplete();
+    }
+  };
+
+  skipBtn.onclick = () => {
+    video.pause();
+    video.ontimeupdate = null; // Stoppt das Prüfen
+    finishVideo();
+  };
+
+  video.ontimeupdate = () => {
+    // Pausiere kurz vor dem Ende, um den Player fließend zu beenden
+    if (video.duration &amp;&amp; video.currentTime >= video.duration - 0.1) {
+      video.pause();
+      video.ontimeupdate = null;
+      finishVideo();
+    }
+  };
+
+  video.onerror = finishVideo;
+  video.onended = finishVideo;
+
+  video.play().catch((e) => {
+    console.warn("Video konnte nicht automatisch starten:", e);
+    finishVideo();
+  });
+}
+
+/**
+ * Pausiert das Spiel.
+ */
+function pauseGame() {
+  if (world) {
+    gamePaused = true;
+    world.background_sound.pause();
+    if (world.character &amp;&amp; world.character.isFlying)
+      world.character.broom_sound.pause();
+    document.getElementById("pauseMenu").style.display = "flex";
+    document.getElementById("btnMenu").style.display = "none";
+  }
+}
+
+/**
+ * Setzt das Spiel nach Pause fort.
+ */
+function resumeGame() {
+  if (world) {
+    gamePaused = false;
+    world.background_sound.play();
+    if (world.character &amp;&amp; world.character.isFlying)
+      world.character.broom_sound.play().catch(() => {});
+    document.getElementById("pauseMenu").style.display = "none";
+    document.getElementById("btnMenu").style.display = "flex";
+  }
+}
+
+/**
+ * Kehrt zum Hauptmenü zurück.
+ */
+function backToMenu() {
+  if (world) {
+    world.stopGame();
+  }
+  document.getElementById("pauseMenu").style.display = "none";
+  document.getElementById("gameOverScreen").style.display = "none";
+  document.getElementById("winScreen").style.display = "none";
+  document.getElementById("startScreen").style.display = "flex";
+  document.getElementById("btnMenu").style.display = "none";
+  clearAllIntervals();
+  hideCrosshair();
+  world = null;
+  menu_sound.play();
+}
+
+/**
+ * Löscht alle aktiven Intervalle (Game Loop, Animationen).
+ */
+function clearAllIntervals() {
+  intervalIds.forEach((id) => originalClearInterval(id));
+  intervalIds = [];
+}
+
+/**
+ * Shows the custom crosshair and hides the default cursor.
+ */
+function showCrosshair() {
+  if (crosshair) crosshair.style.display = "block";
+  if (canvas) canvas.style.cursor = "none";
+}
+
+/**
+ * Hides the custom crosshair and shows the default cursor.
+ */
+function hideCrosshair() {
+  if (crosshair) crosshair.style.display = "none";
+  if (canvas) canvas.style.cursor = "default";
+}
+
+/**
+ * Zeigt oder versteckt das Hilfemenü.
+ */
+function toggleHelp() {
+  let help = document.getElementById("helpMenu");
+  if (help.style.display === "flex") {
+    help.style.display = "none";
+  } else {
+    help.style.display = "flex";
+  }
+}
+
+/**
+ * Zeigt das Optionsmenü.
+ */
+function showOptions() {
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("optionsMenu").style.display = "flex";
+}
+
+/**
+ * Schließt das Optionsmenü.
+ */
+function closeOptions() {
+  document.getElementById("optionsMenu").style.display = "none";
+  document.getElementById("startScreen").style.display = "flex";
+}
+
+/**
+ * Zeigt die Highscore-Liste an.
+ */
+function showHighscore() {
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("highscoreMenu").style.display = "flex";
+
+  let list = getHighscores();
+  let listHTML = '&lt;ol style="padding-left: 20px; text-align: left;">';
+
+  list.forEach((entry) => {
+    listHTML += `&lt;li>${entry.name}: ${entry.score}&lt;/li>`;
+  });
+  listHTML += "&lt;/ol>";
+
+  // Wir nutzen highscoreValue als Container für die Liste, highscoreNameDisplay brauchen wir hier nicht zwingend
+  document.getElementById("highscoreNameDisplay").style.display = "none"; // Verstecken, da wir eine Liste haben
+  document.getElementById("highscoreValue").innerHTML = listHTML;
+}
+
+/**
+ * Schließt die Highscore-Liste.
+ */
+function closeHighscore() {
+  document.getElementById("highscoreMenu").style.display = "none";
+  document.getElementById("startScreen").style.display = "flex";
+  document.getElementById("highscoreNameDisplay").style.display = "block"; // Reset für Layout
+}
+
+/**
+ * Beendet das Spiel (schließt Tab).
+ */
+function exitGame() {
+  window.close();
+  alert("Das Spiel wird beendet. Bitte schließe den Tab.");
+  location.reload();
+}
+
+/**
+ * Ändert die globale Lautstärke.
+ * @param {number} amount - Änderungswert (z.B. +0.1 oder -0.1).
+ */
+function changeVolume(amount) {
+  globalVolume += amount;
+  if (globalVolume > 1) globalVolume = 1;
+  if (globalVolume &lt; 0) globalVolume = 0;
+
+  document.getElementById("volDisplay").innerText =
+    Math.round(globalVolume * 100) + "%";
+
+  let volOptions = document.getElementById("volDisplayOptions");
+  if (volOptions) volOptions.innerText = Math.round(globalVolume * 100) + "%";
+
+  menu_sound.volume = isMuted ? 0 : globalVolume;
+
+  if (world &amp;&amp; !isMuted) {
+    world.updateVolume(globalVolume);
+  }
+}
+
+/**
+ * Schaltet den Ton an/aus (Mute).
+ */
+function toggleMute() {
+  isMuted = !isMuted;
+  document.getElementById("muteBtn").innerText = isMuted ? "🔇" : "🔊";
+  menu_sound.volume = isMuted ? 0 : globalVolume;
+  if (world) {
+    world.updateVolume(isMuted ? 0 : globalVolume);
+  }
+}
+
+/**
+ * Prüft am Ende des Spiels, ob ein neuer Highscore erreicht wurde.
+ * @param {number} score - Erreichter Punktestand.
+ * @param {boolean} won - Ob das Spiel gewonnen wurde.
+ */
+function checkEndGame(score, won) {
+  hideCrosshair();
+  let highscores = getHighscores();
+
+  // Prüfen, ob der Score in die Top 5 kommt
+  // Entweder ist die Liste noch nicht voll (&lt; 5) oder der Score ist höher als der schlechteste (letzte) Eintrag
+  let isNewHighscore =
+    highscores.length &lt; 5 || score > highscores[highscores.length - 1].score;
+
+  if (isNewHighscore) {
+    tempScore = score; // Zwischenspeichern für das Speichern-Menü
+    document.getElementById("newHighscoreMenu").style.display = "flex";
+    // Wir zeigen das Menü an, speichern aber noch nicht. Das macht saveHighscore()
+  }
+
+  document.getElementById("btnMenu").style.display = "none";
+  if (won) {
+    document.getElementById("winScreen").style.display = "flex";
+    if (!isNewHighscore) {
+      setTimeout(() => {
+        playOutroVideoAndRestart();
+      }, 2500); // Startet das Video automatisch nach 2,5 Sekunden
+    }
+  } else {
+    let scoreElement = document.getElementById("gameOverScore");
+    if (scoreElement) {
+      scoreElement.innerText = "Score: " + score;
+    }
+    document.getElementById("gameOverScreen").style.display = "flex";
+  }
+}
+
+/**
+ * Speichert den Highscore im LocalStorage.
+ */
+function saveHighscore() {
+  let name = document.getElementById("playerName").value;
+  if (!name) name = "Anonym";
+
+  let highscores = getHighscores();
+
+  // Neuen Eintrag hinzufügen
+  highscores.push({ name: name, score: tempScore });
+
+  // Sortieren (höchster Score zuerst)
+  highscores.sort((a, b) => b.score - a.score);
+
+  // Nur die Top 5 behalten
+  highscores = highscores.slice(0, 5);
+
+  // Speichern
+  localStorage.setItem("highscoreList", JSON.stringify(highscores));
+
+  document.getElementById("newHighscoreMenu").style.display = "none";
+  if (document.getElementById("winScreen").style.display === "flex") {
+    playOutroVideoAndRestart(); // Wenn man gewonnen hat, zeige nun das Video
+  } else {
+    showHighscore(); // Wenn man verloren hat, zeige den normalen Highscore-Screen
+  }
+}
+
+/**
+ * Hilfsfunktion: Lädt die Highscore-Liste sicher aus dem LocalStorage.
+ */
+function getHighscores() {
+  let stored = localStorage.getItem("highscoreList");
+  try {
+    let parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    // Fallback, falls alte Daten oder gar keine Daten da sind
+    return [];
+  }
+}
+
+/**
+ * Schaltet den Vollbildmodus um.
+ */
+function toggleFullscreen() {
+  let container = document.getElementById("game-container");
+  if (!document.fullscreenElement) {
+    container.requestFullscreen().catch((err) => {
+      console.log(
+        `Error attempting to enable full-screen mode: ${err.message}`,
+      );
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.code === "ArrowRight") {
+    keyboard.RIGHT = true;
+  }
+  if (e.code === "ArrowLeft") {
+    keyboard.LEFT = true;
+  }
+  if (e.code === "ArrowUp") {
+    keyboard.UP = true;
+  }
+  if (e.code === "ArrowDown") {
+    keyboard.DOWN = true;
+  }
+  if (e.code === "Space") {
+    keyboard.SPACE = true;
+  }
+  if (e.code === "KeyD") {
+    keyboard.D = true;
+  }
+  if (e.code === "KeyF") {
+    keyboard.F = true;
+  }
+  if (e.code === "KeyB") {
+    if (world &amp;&amp; world.character) {
+      if (world.character.isFlying) {
+        world.character.toggleFlying();
+        world.character.currentWeapon = "shotgun";
+      } else if (world.coinBar.percentage > 0) {
+        world.character.currentWeapon = "broom";
+        world.character.toggleFlying();
+      }
+    }
+  }
+  if (e.code === "KeyU") {
+    if (world &amp;&amp; world.character) {
+      world.character.currentWeapon = "uzi";
+      if (world.character.isFlying) world.character.toggleFlying();
+    }
+  }
+  if (e.code === "KeyS") {
+    keyboard.S = true; // Flasche werfen
+  }
+  if (e.code === "KeyW") {
+    if (world &amp;&amp; world.character) {
+      world.character.currentWeapon = "shotgun";
+      if (world.character.isFlying) world.character.toggleFlying();
+    }
+  }
+
+  if (e.code === "Escape" || e.code === "KeyP") {
+    if (world) {
+      if (document.getElementById("pauseMenu").style.display === "flex") {
+        resumeGame();
+      } else {
+        pauseGame();
+      }
+    }
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.code === "ArrowRight") {
+    keyboard.RIGHT = false;
+  }
+  if (e.code === "ArrowLeft") {
+    keyboard.LEFT = false;
+  }
+  if (e.code === "ArrowUp") {
+    keyboard.UP = false;
+  }
+  if (e.code === "ArrowDown") {
+    keyboard.DOWN = false;
+  }
+  if (e.code === "Space") {
+    keyboard.SPACE = false;
+  }
+  if (e.code === "KeyD") {
+    keyboard.D = false;
+  }
+  if (e.code === "KeyF") {
+    keyboard.F = false;
+  }
+  if (e.code === "KeyS") {
+    keyboard.S = false;
+  }
+});
+
+// Maus-Steuerung
+window.addEventListener("mousedown", (e) => {
+  if (e.button === 0) {
+    // Links-Klick = Schießen (D)
+    keyboard.D = true;
+  }
+  if (e.button === 2) {
+    // Rechts-Klick = Springen (Space)
+    keyboard.SPACE = true;
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (e.button === 0) {
+    keyboard.D = false;
+  }
+  if (e.button === 2) {
+    keyboard.SPACE = false;
+  }
+});
+
+window.addEventListener("contextmenu", (e) => {
+  e.preventDefault(); // Rechts-Klick Menü unterdrücken
+});
+
+window.addEventListener("wheel", (e) => {
+  if (world &amp;&amp; world.character) {
+    if (world.character.isFlying) {
+      e.preventDefault(); // Verhindert das Scrollen der Seite
+      world.character.triggerWheelAnimation(e.deltaY);
+    } else if (world.character.currentWeapon === "uzi") {
+      e.preventDefault();
+      world.triggerUziCircleAttack();
+    }
+  }
+});
+
+/**
+ * Startet das Vorladen der wichtigsten Bilder, um Ruckler zu vermeiden.
+ */
+
+/**
+ * Startet das Vorladen der wichtigsten Bilder, um Ruckler zu vermeiden.
+ */
+function startPreloading() {
+  let startScreen = document.getElementById("startScreen");
+  if (startScreen) startScreen.style.display = "none"; // Startscreen erst ausblenden
+
+  let imagesToLoad = [
+    // Pepe
+    "img/2_character_pepe/2_walk/W-21.png",
+    "img/2_character_pepe/2_walk/W-22.png",
+    "img/2_character_pepe/3_jump/J-31.png",
+    "img/2_character_pepe/1_idle/idle/I-1.png",
+    // Enemies
+    "img/3_enemies_chicken/chicken_normal/1_walk/1_w.png",
+    "img/3_enemies_chicken/chicken_small/1_walk/1_w.png",
+    "img/4_enemie_boss_chicken/2_alert/G5.png",
+    "img/4_enemie_boss_chicken/3_attack/G13.png",
+    "img/3_enemies_chicken/chicken_sven/1_walk/4.png",
+    "img/3_enemies_chicken/chicken_sven/1_walk/5.png",
+    "img/5_background/layers/1_boden/1.png",
+    "img/5_background/layers/1_boden/2.png",
+    "img/5_background/layers/2_berge/1.png",
+    "img/5_background/layers/2_berge/2.png",
+    // Hier später neue Bilder eintragen, z.B.:
+    // "img/5_background/layers/2_berge/3.png",
+    // Dritte Ebene (Blumen / Wolken im Hintergrund)
+    "img/5_background/layers/3_blum/1.png",
+    "img/5_background/layers/3_blum/2.png",
+    "img/5_background/layers/3_blum/3.png",
+    "img/5_background/layers/3_blum/4.png",
+    "img/5_background/layers/3_blum/5.png",
+    "img/5_background/layers/3_blum/6.png",
+    "img/5_background/layers/3_blum/7.png",
+    // UI
+    "img/7_statusbars/1_statusbar/2_statusbar_health/blue/0.png",
+    "img/7_statusbars/1_statusbar/2_statusbar_health/blue/100.png",
+    "img/8_coin/coin_1.png",
+    "img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png",
+    // Screens
+    "img/You won, you lost/You Win A.png",
+    // Salsa Bottles Wurf
+    "img/6_salsa_bottle/bottle_rotation/1_bottle_rotation.png",
+    "img/6_salsa_bottle/bottle_rotation/2_bottle_rotation.png",
+    "img/6_salsa_bottle/bottle_rotation/3_bottle_rotation.png",
+    "img/6_salsa_bottle/bottle_rotation/4_bottle_rotation.png",
+    // Wheel animations
+    "img/2_character_pepe/8_flying/wheel/1.png",
+    "img/2_character_pepe/8_flying/wheel/2.png",
+    "img/2_character_pepe/8_flying/wheel/3.png",
+    "img/2_character_pepe/8_flying/wheel/4.png",
+    "img/2_character_pepe/8_flying/wheelfire/1d.png",
+    "img/2_character_pepe/8_flying/wheelfire/2d.png",
+    "img/2_character_pepe/8_flying/wheelfire/3d.png",
+    "img/2_character_pepe/8_flying/wheelfire/4d.png",
+    "img/2_character_pepe/8_flying/wheelfire/5d.png",
+    // Uzis
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/00.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/01.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/02.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/03.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/04.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/05.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/07.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/08.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/09.png",
+    "img/2_character_pepe/6_shooting/uzilauf/onewayfire/10.png",
+  ];
+
+  let loadedCount = 0;
+  let totalImages = imagesToLoad.length;
+  let loadingBar = document.getElementById("loadingBar");
+  let loadingPercent = document.getElementById("loadingPercent");
+  let loadingScreen = document.getElementById("loadingScreen");
+
+  // Funktion zum Aktualisieren des Balkens
+  const updateProgress = () => {
+    loadedCount++;
+    let percent = Math.round((loadedCount / totalImages) * 100);
+
+    if (loadingBar) loadingBar.style.width = percent + "%";
+    if (loadingPercent) loadingPercent.innerText = percent + "%";
+
+    if (loadedCount >= totalImages) {
+      setTimeout(() => {
+        // Ladebildschirm ausblenden
+        if (loadingScreen) loadingScreen.style.display = "none";
+        // Startscreen anzeigen
+        let screen = document.getElementById("startScreen");
+        if (screen) screen.style.display = "flex";
+      }, 500); // Kurze Verzögerung für flüssigen Übergang
+    }
+  };
+
+  // Bilder laden
+  imagesToLoad.forEach((path) => {
+    let img = new Image();
+    img.src = path;
+    img.onload = updateProgress;
+    img.onerror = () => {
+      console.warn("Konnte Bild nicht vorladen:", path);
+      updateProgress(); // Trotz Fehler weitermachen, damit es nicht hängen bleibt
+    };
+  });
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

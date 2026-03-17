@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="img/3_enemies_chicken/chicken_normal/1_walk/1_w.png"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="js/models/movable-object.class.js"></script>
+    <script defer src="js/models/background-object.class.js"></script>
+    <script defer src="js/models/status-bar.class.js"></script>
+    <script defer src="js/models/coin-bar.class.js"></script>
+    <script defer src="js/models/endboss-bar.class.js"></script>
+    <script defer src="js/models/cloud.class.js"></script>
+    <script defer src="js/models/particle.class.js"></script>
+    <script defer src="js/models/bullet.class.js"></script>
+    <script defer src="js/models/gatling-bullet.class.js"></script>
+    <script defer src="js/models/shell-casing.class.js"></script>
+    <script defer src="js/models/explosion.class.js"></script>
+    <script defer src="js/models/coin.class.js"></script>
+    <script defer src="js/models/salsa-bottle.class.js"></script>
+    <script defer src="js/models/throwable-bottle.class.js"></script>
+    <script defer src="js/models/energy-ball.class.js"></script>
+    <script defer src="js/models/chicken.class.js"></script>
+    <script defer src="js/models/small-chicken.class.js"></script>
+    <script defer src="js/models/endboss.class.js"></script>
+    <script defer src="js/models/charakter.class.js"></script>
+    <script defer src="js/models/level-manager.class.js"></script>
+    <script defer src="js/models/collision-manager.class.js"></script>
+    <script defer src="js/models/world.class.js"></script>
+
+    <script defer src="js/templates/gameover.js"></script>
+    <script defer src="js/templates/helpmenu.js"></script>
+    <script defer src="js/templates/highscoremenu.js"></script>
+    <script defer src="js/templates/newhighscoremenu.js"></script>
+    <script defer src="js/templates/optionsmenu.js"></script>
+    <script defer src="js/templates/overlay.js"></script>
+    <script defer src="js/templates/pausebutton.js"></script>
+    <script defer src="js/templates/pausemenu.js"></script>
+    <script defer src="js/templates/startscreen.js"></script>
+    <script defer src="js/templates/touchcontrols.js"></script>
+    <script defer src="js/templates/winscreen.js"></script>
+    <script defer src="js/templates/templates.js"></script>
+    <script defer src="js/game.js"></script>
+  </head>
+  <body onload="init()">
+    <!-- Turn Device Screen -->
+    <div id="turnDeviceScreen">
+      <div class="phone-icon"></div>
+      <h2>Bitte Gerät drehen!</h2>
+      <p class="turn-device-text">Das Spiel wird im Querformat gespielt.</p>
+    </div>
+
+    <div id="game-container" class="game-container">
+      <canvas id="canvas" class="canvas" width="720" height="480"></canvas>
+      <img id="crosshair" src="img/icons/crosshair.png" />
+    </div>
+  </body>
+</html>

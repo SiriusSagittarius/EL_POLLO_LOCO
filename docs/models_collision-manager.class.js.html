@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/collision-manager.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/collision-manager.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Übernimmt die gesamte Kollisionslogik zwischen dem Charakter, Gegnern, Projektilen und Items.
+ */
+class CollisionManager {
+  constructor(world) {
+    this.world = world;
+  }
+
+  /**
+   * Führt jeden Frame alle Arten von Kollisionsprüfungen nacheinander aus.
+   */
+  checkCollisions() {
+    this.checkBulletCollisions();
+    this.checkBottleCollisions();
+    this.checkCharacterEnemyCollisions();
+    this.checkCollectibles();
+  }
+
+  checkBulletCollisions() {
+    for (let i = this.world.bullets.length - 1; i >= 0; i--) {
+      const bullet = this.world.bullets[i];
+
+      if (Math.abs(bullet.x - this.world.character.x) > 2000) {
+        bullet.stopIntervals();
+        this.world.bullets.splice(i, 1);
+        continue;
+      }
+
+      for (let j = this.world.enemies.length - 1; j >= 0; j--) {
+        const enemy = this.world.enemies[j];
+        if (bullet.isColliding(enemy)) {
+          if (enemy instanceof Endboss) {
+            this.handleBossHit(enemy, i);
+          } else {
+            this.handleEnemyHit(enemy, j, bullet, i);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  handleBossHit(enemy, bulletIndex) {
+    enemy.hit();
+    this.world.shake(5, 100);
+    this.world.endbossBar.setPercentage(enemy.energy);
+    if (bulletIndex !== undefined &amp;&amp; bulletIndex >= 0) {
+      this.world.bullets.splice(bulletIndex, 1);
+    }
+    if (enemy.isDead() &amp;&amp; !this.world.bossDying) {
+      this.world.bossDying = true;
+      setTimeout(() => {
+        enemy.stopIntervals();
+        this.world.enemies = this.world.enemies.filter((e) => e !== enemy);
+        this.world.score += 500;
+        this.world.checkHighscore();
+        this.world.gameWon();
+      }, 1000);
+    }
+  }
+
+  handleEnemyHit(enemy, enemyIndex, bullet, bulletIndex) {
+    let sound = this.world.chicken_dead_sound.cloneNode(true);
+    sound.volume = this.world.volume;
+    sound.play().catch(() => {});
+    this.world.score += 20;
+    this.world.checkHighscore();
+    enemy.energy = 0;
+    enemy.stopIntervals();
+    this.world.enemies.splice(enemyIndex, 1);
+    if (bullet) bullet.stopIntervals();
+    if (bulletIndex !== undefined &amp;&amp; bulletIndex >= 0) {
+      this.world.bullets.splice(bulletIndex, 1);
+    }
+  }
+
+  checkBottleCollisions() {
+    if (!this.world.throwableObjects) return;
+    for (let i = this.world.throwableObjects.length - 1; i >= 0; i--) {
+      const bottle = this.world.throwableObjects[i];
+      for (let j = this.world.enemies.length - 1; j >= 0; j--) {
+        const enemy = this.world.enemies[j];
+        if (bottle.isColliding(enemy)) {
+          bottle.stopIntervals();
+          this.world.explosions.push(new Explosion(bottle.x, bottle.y));
+          this.world.throwableObjects.splice(i, 1);
+          if (enemy instanceof Endboss) {
+            this.handleBossHit(enemy, -1);
+          } else {
+            this.handleEnemyHit(enemy, j, bottle, -1);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  checkCharacterEnemyCollisions() {
+    this.world.enemies.forEach((enemy) => {
+      // Feature: Huhn aufspießen beim Fliegen
+      if (
+        this.world.character.isFlying &amp;&amp;
+        !this.world.character.impaledChicken &amp;&amp;
+        enemy instanceof Chicken
+      ) {
+        if (this.world.character.isColliding(enemy)) {
+          this.world.character.impaledChicken = true; // Status setzen
+          this.world.character.shotsWithChicken = 0;
+          enemy.energy = 0; // Huhn technisch entfernen
+          enemy.toDelete = true; // Markieren zum Löschen (wird im Loop bereinigt oder muss hier direkt weg)
+          this.world.enemies = this.world.enemies.filter((e) => e !== enemy); // Direkt entfernen
+          return; // Keine Schaden-Logik ausführen
+        }
+      }
+
+      if (
+        !this.world.character.isFlying &amp;&amp;
+        this.world.character.isColliding(enemy) &amp;&amp;
+        !this.world.character.isHurt()
+      ) {
+        this.world.character.hit();
+        this.world.statusBar.setPercentage(this.world.character.energy);
+      }
+    });
+
+    if (this.world.character.isDead()) {
+      this.world.gameOver();
+    }
+  }
+
+  checkCollectibles() {
+    // Coins
+    for (let i = this.world.coins.length - 1; i >= 0; i--) {
+      if (this.world.character.isColliding(this.world.coins[i])) {
+        this.world.coins[i].stopIntervals();
+        this.world.collectCoin(i);
+      }
+    }
+    // Salsa
+    for (let i = this.world.salsaBottles.length - 1; i >= 0; i--) {
+      if (this.world.character.isColliding(this.world.salsaBottles[i])) {
+        this.world.character.bottles++; // Flasche eingesammelt!
+        this.world.salsaBottles[i].stopIntervals();
+        this.world.salsaBottles.splice(i, 1);
+      }
+    }
+    // Energy Balls
+    for (let i = this.world.energyBalls.length - 1; i >= 0; i--) {
+      if (this.world.character.isColliding(this.world.energyBalls[i])) {
+        this.world.character.energy += 20;
+        if (this.world.character.energy > 100)
+          this.world.character.energy = 100;
+        this.world.statusBar.setPercentage(this.world.character.energy);
+        this.world.energyBalls[i].stopIntervals();
+        this.world.energyBalls.splice(i, 1);
+        console.log(
+          "Energie gesammelt! Neue Energie:",
+          this.world.character.energy,
+        );
+      }
+    }
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
