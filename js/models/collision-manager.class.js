@@ -107,6 +107,19 @@ class CollisionManager {
         this.world.enemies.splice(i, 1);
       } else if (
         !this.world.character.isFlying &&
+        this.world.character.isAboveGround() &&
+        this.world.character.speedY < 0 &&
+        this.world.character.y + this.world.character.height - this.world.character.offset.bottom < enemy.y + enemy.height / 2 + 40
+      ) {
+       
+        if (enemy instanceof Endboss) {
+          this.handleBossHit(enemy, 10); 
+        } else {
+          this.handleEnemyHit(enemy, i); 
+        }
+        this.world.character.jump(); 
+      } else if (
+        !this.world.character.isFlying &&
         !this.world.character.isHurt()
       ) {
         this.world.character.hit();
