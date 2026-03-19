@@ -98,7 +98,7 @@ class CollisionManager {
       if (
         this.world.character.isFlying &&
         !this.world.character.impaledChicken &&
-        enemy instanceof Chicken
+        (enemy instanceof Chicken || enemy instanceof SmallChicken)
       ) {
         this.world.character.impaledChicken = true;
         this.world.character.shotsWithChicken = 0;
@@ -107,17 +107,18 @@ class CollisionManager {
         this.world.enemies.splice(i, 1);
       } else if (
         !this.world.character.isFlying &&
-        this.world.character.isAboveGround() &&
         this.world.character.speedY < 0 &&
-        this.world.character.y + this.world.character.height - this.world.character.offset.bottom < enemy.y + enemy.height / 2 + 40
+        this.world.character.y +
+          this.world.character.height -
+          this.world.character.offset.bottom <
+          enemy.y + enemy.height / 2 + 40
       ) {
-       
         if (enemy instanceof Endboss) {
-          this.handleBossHit(enemy, 10); 
-        } else {
-          this.handleEnemyHit(enemy, i); 
+          this.handleBossHit(enemy, 10);
+        } else if (enemy instanceof Chicken || enemy instanceof SmallChicken) {
+          this.handleEnemyHit(enemy, i);
         }
-        this.world.character.jump(); 
+        this.world.character.jump();
       } else if (
         !this.world.character.isFlying &&
         !this.world.character.isHurt()

@@ -74,8 +74,9 @@ class MovableObject {
       if ((this.isAboveGround() || this.speedY > 0) && !this.isFlying) {
         this.y -= this.speedY;
         this.speedY -= this.acceleration;
-      } else if (!this.isFlying && this.y > 150) {
+      } else if (!this.isFlying && this.y >= 150) {
         this.y = 150;
+        this.speedY = 0;
       }
     }, 1000 / 25);
   }
