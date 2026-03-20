@@ -1,5 +1,6 @@
 /**
- * Verarbeitet die gesamte Kampflogik der Spielwelt (Schießen, Werfen, Spezialangriffe).
+ * @class CombatManager
+ * @description Verarbeitet die gesamte Kampflogik der Spielwelt (Schießen, Werfen, Spezialangriffe).
  */
 class CombatManager {
   /**
@@ -13,13 +14,17 @@ class CombatManager {
 
   /**
    * Überprüft, ob der Spieler die Schusstaste (D) drückt und führt entsprechende Angriffe aus.
+   * @returns {void}
    */
   checkShooting() {
     if (!this.world.keyboard.D) return;
 
     let currentTime = new Date().getTime();
 
-    if (this.world.character.isFlying && currentTime - this.lastShootTime > 100) {
+    if (
+      this.world.character.isFlying &&
+      currentTime - this.lastShootTime > 100
+    ) {
       this.fireGatling(currentTime);
     } else if (!this.world.character.isFlying) {
       let isUzi = this.world.character.currentWeapon === "uzi";
@@ -38,6 +43,7 @@ class CombatManager {
   /**
    * Feuert die Gatling-Gun ab (Standardangriff im Flug).
    * @param {number} currentTime - Der aktuelle Zeitstempel.
+   * @returns {void}
    */
   fireGatling(currentTime) {
     this.lastShootTime = currentTime;
@@ -115,6 +121,7 @@ class CombatManager {
   /**
    * Feuert die Uzi am Boden ab.
    * @param {number} currentTime - Der aktuelle Zeitstempel.
+   * @returns {void}
    */
   fireUzi(currentTime) {
     this.lastShootTime = currentTime;
@@ -132,7 +139,14 @@ class CombatManager {
     let spread = Math.random() * 10 - 5;
 
     this.world.bullets.push(
-      new GatlingBullet(startX, startY, this.world.character.otherDirection, spread, nearestEnemy, this.world)
+      new GatlingBullet(
+        startX,
+        startY,
+        this.world.character.otherDirection,
+        spread,
+        nearestEnemy,
+        this.world,
+      ),
     );
     this.spawnShellCasing();
   }
@@ -140,6 +154,7 @@ class CombatManager {
   /**
    * Feuert die Schrotflinte (mehrere Projektile gleichzeitig).
    * @param {number} currentTime - Der aktuelle Zeitstempel.
+   * @returns {void}
    */
   fireShotgun(currentTime) {
     this.lastShootTime = currentTime;
@@ -155,9 +170,30 @@ class CombatManager {
     let nearestEnemy = this.findNearestEnemy(startX, startY);
 
     this.world.bullets.push(
-      new Bullet(startX, startY, this.world.character.otherDirection, -20, nearestEnemy, this.world),
-      new Bullet(startX, startY, this.world.character.otherDirection, -40, nearestEnemy, this.world),
-      new Bullet(startX, startY, this.world.character.otherDirection, 0, nearestEnemy, this.world)
+      new Bullet(
+        startX,
+        startY,
+        this.world.character.otherDirection,
+        -20,
+        nearestEnemy,
+        this.world,
+      ),
+      new Bullet(
+        startX,
+        startY,
+        this.world.character.otherDirection,
+        -40,
+        nearestEnemy,
+        this.world,
+      ),
+      new Bullet(
+        startX,
+        startY,
+        this.world.character.otherDirection,
+        0,
+        nearestEnemy,
+        this.world,
+      ),
     );
     this.spawnShellCasing();
   }
@@ -188,6 +224,7 @@ class CombatManager {
 
   /**
    * Erzeugt eine Patronenhülse, die beim Schießen ausgeworfen wird.
+   * @returns {void}
    */
   spawnShellCasing() {
     this.world.casings.push(
@@ -201,6 +238,7 @@ class CombatManager {
 
   /**
    * Überprüft, ob die Taste zum Werfen (S) gedrückt wurde und wirft eine Salsa-Flasche.
+   * @returns {void}
    */
   checkThrowing() {
     if (this.world.keyboard.S && this.world.character.bottles > 0) {
@@ -226,9 +264,14 @@ class CombatManager {
   /**
    * Löst den Spezial-Radangriff der Uzi aus (Kugeln werden 360° gefeuert).
    * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
+   * @returns {void}
    */
   triggerUziWheelAttack(deltaY) {
-    if (this.world.character.isUziWheelUp || this.world.character.isUziWheelDown) return;
+    if (
+      this.world.character.isUziWheelUp ||
+      this.world.character.isUziWheelDown
+    )
+      return;
     this.world.character.triggerUziWheelAnimation(deltaY);
 
     let sound = this.world.gatling_sound.cloneNode(true);
@@ -241,7 +284,14 @@ class CombatManager {
 
     for (let i = 0; i < numBullets; i++) {
       let angle = (i * (Math.PI * 2)) / numBullets;
-      let bullet = new GatlingBullet(startX, startY, false, 0, null, this.world);
+      let bullet = new GatlingBullet(
+        startX,
+        startY,
+        false,
+        0,
+        null,
+        this.world,
+      );
       bullet.speedX = Math.cos(angle) * 30;
       bullet.speedY = Math.sin(angle) * 30;
       if (bullet.speedX < 0) {

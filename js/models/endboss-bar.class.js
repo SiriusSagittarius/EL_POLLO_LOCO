@@ -1,3 +1,7 @@
+/**
+ * @class EndbossBar
+ * @description Repräsentiert die Lebensleiste des Endbosses, die oben im Bild angezeigt wird.
+ */
 class EndbossBar extends MovableObject {
   IMAGES = [
     "img/7_statusbars/2_statusbar_endboss/orange/0.png",
@@ -10,6 +14,9 @@ class EndbossBar extends MovableObject {
 
   percentage = 100;
 
+  /**
+   * Erzeugt eine Instanz der Endboss-Lebensleiste.
+   */
   constructor() {
     super();
     this.loadImages(this.IMAGES);
@@ -20,6 +27,11 @@ class EndbossBar extends MovableObject {
     this.setPercentage(100);
   }
 
+  /**
+   * Setzt den Füllstand der Leiste in Prozent und aktualisiert das angezeigte Bild.
+   * @param {number} percentage - Der neue Prozentwert (0-100).
+   * @returns {void}
+   */
   setPercentage(percentage) {
     this.percentage = percentage;
     let path = this.IMAGES[this.resolveImageIndex()];
@@ -28,6 +40,10 @@ class EndbossBar extends MovableObject {
     }
   }
 
+  /**
+   * Ermittelt den Index des zu verwendenden Bildes basierend auf dem aktuellen Prozentwert.
+   * @returns {number} Der Index des Bildes im `IMAGES`-Array.
+   */
   resolveImageIndex() {
     if (this.percentage == 100) {
       return 5;

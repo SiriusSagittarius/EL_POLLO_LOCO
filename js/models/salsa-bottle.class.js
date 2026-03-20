@@ -1,8 +1,16 @@
+/**
+ * @class SalsaBottle
+ * @description Repräsentiert eine auf dem Boden liegende, einsammelbare Salsa-Flasche.
+ * @extends MovableObject
+ */
 class SalsaBottle extends MovableObject {
   height = 60;
   width = 60;
   y = 370;
 
+  /**
+   * Erzeugt eine Instanz einer Salsa-Flasche an einer zufälligen Position.
+   */
   constructor() {
     super();
     this.loadImage("img/6_salsa_bottle/1_salsa_bottle_on_ground.png");

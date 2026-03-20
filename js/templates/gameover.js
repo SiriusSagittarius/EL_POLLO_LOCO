@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für den "Game Over"-Bildschirm.
+ * @returns {string} Der HTML-String für den "Game Over"-Bildschirm.
+ */
 function renderGameOverScreen() {
   return `
     <!-- Game Over Screen -->

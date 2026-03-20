@@ -1,6 +1,13 @@
+/**
+ * @class Coin
+ * @description Repräsentiert eine einsammelbare Münze im Spiel.
+ */
 class Coin extends MovableObject {
   IMAGES_COIN = ["img/8_coin/coin_1.png", "img/8_coin/coin_2.png"];
 
+  /**
+   * Erzeugt eine Instanz einer Münze an einer zufälligen Position.
+   */
   constructor() {
     super();
     this.loadImage("img/8_coin/coin_1.png");
@@ -12,6 +19,10 @@ class Coin extends MovableObject {
     this.animate();
   }
 
+  /**
+   * Startet die Animationsschleife für die Münze.
+   * @returns {void}
+   */
   animate() {
     this.setStoppableInterval(() => {
       this.playAnimation(this.IMAGES_COIN);

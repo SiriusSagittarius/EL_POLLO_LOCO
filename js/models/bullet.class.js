@@ -1,3 +1,8 @@
+/**
+ * @class Bullet
+ * @description Repräsentiert ein einzelnes Projektil, z.B. von einer Schrotflinte.
+ * @extends MovableObject
+ */
 class Bullet extends MovableObject {
   width = 40;
   height = 30;
@@ -6,6 +11,14 @@ class Bullet extends MovableObject {
   target = null;
   world = null;
 
+  /**
+   * @param {number} x - Die Start-X-Position des Projektils.
+   * @param {number} y - Die Start-Y-Position des Projektils.
+   * @param {boolean} direction - Die Schussrichtung (true für links, false für rechts).
+   * @param {number} [yOffset=0] - Ein vertikaler Versatz zur Startposition.
+   * @param {MovableObject|null} [target=null] - Ein optionales Ziel für zielsuchende Projektile.
+   * @param {World|null} [world=null] - Eine Referenz zur Spielwelt für Effekte.
+   */
   constructor(x, y, direction, yOffset = 0, target = null, world = null) {
     super();
     this.loadImage("img/2_character_pepe/6_shooting/shotgun/bullet.png");
@@ -36,6 +49,10 @@ class Bullet extends MovableObject {
     this.shoot();
   }
 
+  /**
+   * Startet die Bewegungslogik des Projektils.
+   * @returns {void}
+   */
   shoot() {
     this.setStoppableInterval(() => {
       if (this.target && !this.target.isDead()) {

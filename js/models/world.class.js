@@ -1,5 +1,6 @@
 /**
- * Repräsentiert die zentrale Spielwelt.
+ * @class World
+ * @description Repräsentiert die zentrale Spielwelt.
  * Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Logik-Komponenten.
  */
 class World {
@@ -33,6 +34,9 @@ class World {
   shake_x = 0;
   shake_y = 0;
   chickenFlashTime = 0;
+  isShowingWrongWay = false;
+  isPushingBack = false;
+  backwardRunTime = 0;
 
   levelManager;
   collisionManager;
@@ -49,6 +53,10 @@ class World {
   gatling_sound = new Audio("audio/gatlinggun.mp3");
   chickenshot_sound = new Audio("audio/chickenshot.mp3");
 
+  /**
+   * @param {HTMLCanvasElement} canvas - Das Canvas-Element, auf dem das Spiel gezeichnet wird.
+   * @param {Keyboard} keyboard - Das Keyboard-Objekt zur Abfrage von Tastatureingaben.
+   */
   constructor(canvas, keyboard) {
     this.ctx = canvas.getContext("2d");
     this.canvas = canvas;
@@ -85,7 +93,8 @@ class World {
   }
 
   /**
-   * Verknüpft die Welt mit den Objekten, damit diese Zugriff auf die Welt haben.
+   * Weist den relevanten Spielobjekten eine Referenz auf die Welt zu.
+   * @returns {void}
    */
   setWorld() {
     this.character.world = this;
@@ -94,6 +103,7 @@ class World {
 
   /**
    * Startet die Haupt-Spielschleife (Game Loop).
+   * @returns {void}
    */
   run() {
     this.runInterval = setInterval(() => {
@@ -109,11 +119,13 @@ class World {
       this.updateCharacterAngle();
       this.updateFuel();
       this.cleanupResources();
+      this.handleBackwardMovement();
     }, 1000 / 60);
   }
 
   /**
    * Pausiert das Spiel und stoppt alle aktiven Game-Loops.
+   * @returns {void}
    */
   stopGame() {
     clearInterval(this.runInterval);
@@ -125,6 +137,7 @@ class World {
 
   /**
    * Aktualisiert den Treibstoff (Münzleiste) während des Fliegens.
+   * @returns {void}
    * Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.
    */
   updateFuel() {
@@ -146,6 +159,7 @@ class World {
 
   /**
    * Richtet den fliegenden Charakter in Richtung des Mauszeigers (Fadenkreuz) aus.
+   * @returns {void}
    */
   updateCharacterAngle() {
     if (this.character.isFlying) {
@@ -172,6 +186,7 @@ class World {
   /**
    * Aktualisiert die allgemeine Spiellautstärke.
    * @param {number} volume - Der neue Lautstärke-Wert.
+   * @returns {void}
    */
   updateVolume(volume) {
     this.volume = volume;
@@ -195,6 +210,7 @@ class World {
   /**
    * Sammelt eine Münze auf und füllt damit den Flugbesen-Treibstoff.
    * @param {number} index - Index der Münze im Welt-Array.
+   * @returns {void}
    */
   collectCoin(index) {
     this.coins.splice(index, 1);
@@ -222,6 +238,7 @@ class World {
   /**
    * Entfernt Objekte (Feinde, Münzen, Items), die weit hinter dem Spieler liegen,
    * um Speicherplatz und Rechenleistung (Performance) zu sparen.
+   * @returns {void}
    */
   cleanupResources() {
     let leftBoundary = this.character.x - 800;
@@ -254,6 +271,7 @@ class World {
 
   /**
    * Bereinigt gelöschte oder abgelaufene Explosionen aus dem Array.
+   * @returns {void}
    */
   checkExplosions() {
     this.explosions = this.explosions.filter((e) => !e.toDelete);
@@ -261,13 +279,16 @@ class World {
 
   /**
    * Bereinigt gelöschte oder abgelaufene Patronenhülsen aus dem Array.
+   * @returns {void}
    */
   checkCasings() {
     this.casings = this.casings.filter((casing) => !casing.toDelete);
   }
 
   /**
-   * Aktualisiert und zeichnet Lauf-Partikel (Staub) am Boden und entfernt alte Partikel.
+   * Erzeugt Lauf-Partikel (Staub) am Boden, wenn der Charakter sich bewegt,
+   * und entfernt alte Partikel aus dem Array.
+   * @returns {void}
    */
   checkParticles() {
     this.particles = this.particles.filter((p) => !p.toDelete);
@@ -286,6 +307,7 @@ class World {
 
   /**
    * Prüft kontinuierlich, ob der aktuelle Punktestand den Highscore übersteigt.
+   * @returns {void}
    */
   checkHighscore() {
     if (this.score > this.highscore) {
@@ -295,6 +317,7 @@ class World {
 
   /**
    * Wird aufgerufen, wenn die HP des Charakters auf 0 fallen. Beendet den Game Loop.
+   * @returns {void}
    */
   gameOver() {
     console.log("Game Over");
@@ -306,6 +329,7 @@ class World {
 
   /**
    * Wird aufgerufen, wenn der Endboss stirbt. Beendet das Spiel als gewonnen.
+   * @returns {void}
    */
   gameWon() {
     this.stopGame();
@@ -317,6 +341,7 @@ class World {
    * Erzeugt einen Screen-Shake-Effekt (Wackeln der Kamera), z.B. bei einem Treffer des Bosses.
    * @param {number} intensity - Stärke des Wackelns in Pixel.
    * @param {number} duration - Dauer des Effekts in Millisekunden.
+   * @returns {void}
    */
   shake(intensity, duration) {
     let interval = setInterval(() => {
@@ -329,5 +354,34 @@ class World {
       this.shake_x = 0;
       this.shake_y = 0;
     }, duration);
+  }
+
+  /**
+   * Behandelt die Logik, wenn der Spieler zu weit rückwärts läuft.
+   * Zeigt eine Warnung an und schiebt den Charakter nach vorne.
+   * @returns {void}
+   */
+  handleBackwardMovement() {
+    const BACKWARD_LIMIT_X = -100;
+    const TIME_LIMIT_MS = 2000;
+
+    if (this.isPushingBack) return;
+
+    if (this.keyboard.LEFT && this.character.x < BACKWARD_LIMIT_X) {
+      this.backwardRunTime += 1000 / 60;
+    } else {
+      this.backwardRunTime = 0;
+    }
+
+    if (this.backwardRunTime > TIME_LIMIT_MS) {
+      this.isPushingBack = true;
+      this.isShowingWrongWay = true;
+
+      setTimeout(() => {
+        this.isShowingWrongWay = false;
+        this.isPushingBack = false;
+        this.character.x += 400;
+      }, 1500);
+    }
   }
 }

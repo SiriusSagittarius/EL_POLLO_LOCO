@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für den Startbildschirm.
+ * @returns {string} Der HTML-String für den Startbildschirm.
+ */
 function renderStartScreen() {
   return `
     <!-- Start Screen -->
@@ -19,6 +23,11 @@ function renderStartScreen() {
         <button onclick="startGame()" class="menu-btn">Start Game</button>
         <button onclick="showHighscore()" class="menu-btn">Highscore</button>
         <button onclick="exitGame()" class="menu-btn" style="background-color: #ff4444">Beenden</button>
+
+        <div style="position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.6); color: white; padding: 15px; border-radius: 10px; font-family: sans-serif; text-align: center; max-width: 90%; font-size: 14px; border: 1px solid rgba(255,255,255,0.3);">
+            <b>Tipp:</b> Durch die magischen Uzis verwandelt sich Pepe beim Schießen in "Pepistol", den Revolverhelden.
+            Deswegen sieht er anders aus und vollführt wilde Aktionen, wenn man das Mausrad bewegt!
+        </div>
 
         <a href="imprint.html" class="imprint-link">Imprint & Privacy Policy</a>
     </div>

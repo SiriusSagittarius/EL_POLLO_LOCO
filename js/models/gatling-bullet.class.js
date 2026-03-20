@@ -1,3 +1,8 @@
+/**
+ * @class GatlingBullet
+ * @description Repräsentiert ein schnelles Projektil, wie von einer Gatling-Gun oder Uzi.
+ * @extends MovableObject
+ */
 class GatlingBullet extends MovableObject {
   width = 15;
   height = 10;
@@ -7,6 +12,15 @@ class GatlingBullet extends MovableObject {
   world = null;
   isSpinning = false;
 
+  /**
+   * @param {number} x - Die Start-X-Position des Projektils.
+   * @param {number} y - Die Start-Y-Position des Projektils.
+   * @param {boolean} direction - Die Schussrichtung (true für links, false für rechts).
+   * @param {number} [yOffset=0] - Ein vertikaler Versatz zur Startposition.
+   * @param {MovableObject|null} [target=null] - Ein optionales Ziel für zielsuchende Projektile.
+   * @param {World|null} [world=null] - Eine Referenz zur Spielwelt für Effekte.
+   * @param {HTMLImageElement|null} [customImage=null] - Ein optionales, benutzerdefiniertes Bild für das Projektil.
+   */
   constructor(
     x,
     y,
@@ -49,6 +63,10 @@ class GatlingBullet extends MovableObject {
     this.shoot();
   }
 
+  /**
+   * Startet die Bewegungs- und optional die Rotationslogik des Projektils.
+   * @returns {void}
+   */
   shoot() {
     this.setStoppableInterval(() => {
       if (this.target && !this.target.isDead()) {

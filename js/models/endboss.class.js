@@ -1,5 +1,7 @@
 /**
+ * @class Endboss
  * Repräsentiert den Endboss des Spiels.
+ * @extends MovableObject
  */
 class Endboss extends MovableObject {
   height = 400;
@@ -47,6 +49,7 @@ class Endboss extends MovableObject {
 
   /**
    * Initialisiert den Endboss.
+   * @returns {void}
    */
   constructor() {
     super();
@@ -58,6 +61,7 @@ class Endboss extends MovableObject {
 
   /**
    * Startet die Animations- und Bewegungsintervalle des Endbosses.
+   * @returns {void}
    */
   animate() {
     this.setStoppableInterval(() => {
@@ -95,6 +99,7 @@ class Endboss extends MovableObject {
   /**
    * Aktualisiert die Spiellautstärke für die Effekte des Bosses.
    * @param {number} volume - Lautstärkewert (0.0 bis 1.0).
+   * @returns {void}
    */
   updateVolume(volume) {
     this.attack_sound.volume = volume;
@@ -103,6 +108,7 @@ class Endboss extends MovableObject {
 
   /**
    * Bewegt den Endboss in Richtung des Spielers.
+   * @returns {void}
    */
   moveTowardsPepe() {
     if (this.x > this.world.character.x) {

@@ -27,15 +27,21 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Übernimmt die gesamte Kollisionslogik zwischen dem Charakter, Gegnern, Projektilen und Items.
+ * @class CollisionManager
+ * @description Übernimmt die gesamte Kollisionslogik zwischen dem Charakter, Gegnern, Projektilen und Items.
  */
 class CollisionManager {
+  /**
+   * Erzeugt eine Instanz des CollisionManagers.
+   * @param {World} world - Referenz auf die Spielwelt.
+   */
   constructor(world) {
     this.world = world;
   }
 
   /**
-   * Führt jeden Frame alle Arten von Kollisionsprüfungen nacheinander aus.
+   * Führt pro Frame alle Arten von Kollisionsprüfungen aus.
+   * @returns {void}
    */
   checkCollisions() {
     this.checkBulletCollisions();
@@ -44,6 +50,10 @@ class CollisionManager {
     this.checkCollectibles();
   }
 
+  /**
+   * Prüft, ob Projektile (Kugeln) Gegner treffen oder zu weit geflogen sind.
+   * @returns {void}
+   */
   checkBulletCollisions() {
     for (let i = this.world.bullets.length - 1; i >= 0; i--) {
       const bullet = this.world.bullets[i];
@@ -54,40 +64,81 @@ class CollisionManager {
         continue;
       }
 
-      for (let j = this.world.enemies.length - 1; j >= 0; j--) {
-        const enemy = this.world.enemies[j];
-        if (bullet.isColliding(enemy)) {
-          if (enemy instanceof Endboss) {
-            this.handleBossHit(enemy, i);
-          } else {
-            this.handleEnemyHit(enemy, j, bullet, i);
-          }
-          break;
-        }
+      if (this.checkProjectileHit(bullet)) {
+        bullet.stopIntervals();
+        this.world.bullets.splice(i, 1);
       }
     }
   }
 
-  handleBossHit(enemy, bulletIndex) {
-    enemy.hit();
-    this.world.shake(5, 100);
-    this.world.endbossBar.setPercentage(enemy.energy);
-    if (bulletIndex !== undefined &amp;&amp; bulletIndex >= 0) {
-      this.world.bullets.splice(bulletIndex, 1);
-    }
-    if (enemy.isDead() &amp;&amp; !this.world.bossDying) {
-      this.world.bossDying = true;
-      setTimeout(() => {
-        enemy.stopIntervals();
-        this.world.enemies = this.world.enemies.filter((e) => e !== enemy);
-        this.world.score += 500;
-        this.world.checkHighscore();
-        this.world.gameWon();
-      }, 1000);
+  /**
+   * Prüft, ob geworfene Flaschen einen Gegner treffen.
+   * @returns {void}
+   */
+  checkBottleCollisions() {
+    if (!this.world.throwableObjects) return;
+    for (let i = this.world.throwableObjects.length - 1; i >= 0; i--) {
+      const bottle = this.world.throwableObjects[i];
+      if (this.checkProjectileHit(bottle)) {
+        bottle.stopIntervals();
+        this.world.explosions.push(new Explosion(bottle.x, bottle.y));
+        this.world.throwableObjects.splice(i, 1);
+      }
     }
   }
 
-  handleEnemyHit(enemy, enemyIndex, bullet, bulletIndex) {
+  /**
+   * Hilfsfunktion: Überprüft für ein bestimmtes Projektil, ob es einen Gegner trifft.
+   * @param {MovableObject} projectile - Die Kugel oder Flasche.
+   * @returns {boolean} True, wenn ein Treffer registriert wurde.
+   */
+  checkProjectileHit(projectile) {
+    for (let j = this.world.enemies.length - 1; j >= 0; j--) {
+      const enemy = this.world.enemies[j];
+      if (projectile.isColliding(enemy)) {
+        let damage = projectile instanceof ThrowableBottle ? 20 : 5;
+        if (enemy instanceof Endboss) {
+          this.handleBossHit(enemy, damage);
+        } else {
+          this.handleEnemyHit(enemy, j);
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Verarbeitet einen Treffer beim Endboss (Schaden, Hit-Effekt, Sterben).
+   * @param {Endboss} enemy - Das Endboss-Objekt.
+   * @param {number} [damage=5] - Die Höhe des Schadens.
+   * @returns {void}
+   */
+  handleBossHit(enemy, damage) {
+    enemy.hit(damage);
+    this.world.shake(5, 100);
+    this.world.endbossBar.setPercentage(enemy.energy);
+
+    if (enemy.isDead() &amp;&amp; !this.world.bossDying) {
+      this.world.bossDying = true;
+      if (!enemy.playedDeathSound) {
+        enemy.dead_sound.play().catch(() => {});
+        enemy.playedDeathSound = true;
+      }
+      enemy.stopIntervals();
+      this.world.score += 500;
+      this.world.checkHighscore();
+      this.world.gameWon();
+    }
+  }
+
+  /**
+   * Verarbeitet einen Treffer bei einem normalen Gegner.
+   * @param {MovableObject} enemy - Das getroffene Gegner-Objekt.
+   * @param {number} enemyIndex - Der Index des Gegners im Array.
+   * @returns {void}
+   */
+  handleEnemyHit(enemy, enemyIndex) {
     let sound = this.world.chicken_dead_sound.cloneNode(true);
     sound.volume = this.world.volume;
     sound.play().catch(() => {});
@@ -96,95 +147,98 @@ class CollisionManager {
     enemy.energy = 0;
     enemy.stopIntervals();
     this.world.enemies.splice(enemyIndex, 1);
-    if (bullet) bullet.stopIntervals();
-    if (bulletIndex !== undefined &amp;&amp; bulletIndex >= 0) {
-      this.world.bullets.splice(bulletIndex, 1);
-    }
   }
 
-  checkBottleCollisions() {
-    if (!this.world.throwableObjects) return;
-    for (let i = this.world.throwableObjects.length - 1; i >= 0; i--) {
-      const bottle = this.world.throwableObjects[i];
-      for (let j = this.world.enemies.length - 1; j >= 0; j--) {
-        const enemy = this.world.enemies[j];
-        if (bottle.isColliding(enemy)) {
-          bottle.stopIntervals();
-          this.world.explosions.push(new Explosion(bottle.x, bottle.y));
-          this.world.throwableObjects.splice(i, 1);
-          if (enemy instanceof Endboss) {
-            this.handleBossHit(enemy, -1);
-          } else {
-            this.handleEnemyHit(enemy, j, bottle, -1);
-          }
-          break;
-        }
-      }
-    }
-  }
-
+  /**
+   * Prüft Kollisionen zwischen dem Hauptcharakter (Pepe) und Feinden.
+   * @returns {void}
+   */
   checkCharacterEnemyCollisions() {
-    this.world.enemies.forEach((enemy) => {
-      // Feature: Huhn aufspießen beim Fliegen
+    for (let i = this.world.enemies.length - 1; i >= 0; i--) {
+      const enemy = this.world.enemies[i];
+
+      if (!this.world.character.isColliding(enemy)) continue;
+
       if (
         this.world.character.isFlying &amp;&amp;
         !this.world.character.impaledChicken &amp;&amp;
-        enemy instanceof Chicken
+        (enemy instanceof Chicken || enemy instanceof SmallChicken)
       ) {
-        if (this.world.character.isColliding(enemy)) {
-          this.world.character.impaledChicken = true; // Status setzen
-          this.world.character.shotsWithChicken = 0;
-          enemy.energy = 0; // Huhn technisch entfernen
-          enemy.toDelete = true; // Markieren zum Löschen (wird im Loop bereinigt oder muss hier direkt weg)
-          this.world.enemies = this.world.enemies.filter((e) => e !== enemy); // Direkt entfernen
-          return; // Keine Schaden-Logik ausführen
-        }
-      }
-
-      if (
+        this.world.character.impaledChicken = true;
+        this.world.character.shotsWithChicken = 0;
+        enemy.energy = 0;
+        enemy.toDelete = true;
+        enemy.stopIntervals();
+        this.world.enemies.splice(i, 1);
+      } else if (
         !this.world.character.isFlying &amp;&amp;
-        this.world.character.isColliding(enemy) &amp;&amp;
+        this.world.character.speedY &lt; 0 &amp;&amp;
+        this.world.character.y +
+          this.world.character.height -
+          this.world.character.offset.bottom &lt;
+          enemy.y + enemy.height / 2 + 40
+      ) {
+        if (enemy instanceof Endboss) {
+          this.handleBossHit(enemy, 10);
+        } else if (enemy instanceof Chicken || enemy instanceof SmallChicken) {
+          this.handleEnemyHit(enemy, i);
+        }
+        this.world.character.jump();
+      } else if (
+        !this.world.character.isFlying &amp;&amp;
         !this.world.character.isHurt()
       ) {
         this.world.character.hit();
         this.world.statusBar.setPercentage(this.world.character.energy);
       }
-    });
+    }
 
     if (this.world.character.isDead()) {
       this.world.gameOver();
     }
   }
 
+  /**
+   * Überprüft, ob der Charakter einsammelbare Items berührt.
+   * @returns {void}
+   */
   checkCollectibles() {
-    // Coins
-    for (let i = this.world.coins.length - 1; i >= 0; i--) {
-      if (this.world.character.isColliding(this.world.coins[i])) {
-        this.world.coins[i].stopIntervals();
-        this.world.collectCoin(i);
-      }
-    }
-    // Salsa
-    for (let i = this.world.salsaBottles.length - 1; i >= 0; i--) {
-      if (this.world.character.isColliding(this.world.salsaBottles[i])) {
-        this.world.character.bottles++; // Flasche eingesammelt!
-        this.world.salsaBottles[i].stopIntervals();
-        this.world.salsaBottles.splice(i, 1);
-      }
-    }
-    // Energy Balls
-    for (let i = this.world.energyBalls.length - 1; i >= 0; i--) {
-      if (this.world.character.isColliding(this.world.energyBalls[i])) {
-        this.world.character.energy += 20;
-        if (this.world.character.energy > 100)
-          this.world.character.energy = 100;
-        this.world.statusBar.setPercentage(this.world.character.energy);
-        this.world.energyBalls[i].stopIntervals();
-        this.world.energyBalls.splice(i, 1);
-        console.log(
-          "Energie gesammelt! Neue Energie:",
-          this.world.character.energy,
+    this.collectItems(
+      this.world.coins,
+      (item, i) => this.world.collectCoin(i),
+      false,
+    );
+    this.collectItems(
+      this.world.salsaBottles,
+      () => this.world.character.bottles++,
+      true,
+    );
+    this.collectItems(
+      this.world.energyBalls,
+      () => {
+        this.world.character.energy = Math.min(
+          this.world.character.energy + 20,
+          100,
         );
+        this.world.statusBar.setPercentage(this.world.character.energy);
+      },
+      true,
+    );
+  }
+
+  /**
+   * Allgemeine Hilfsfunktion zum Aufsammeln von Items.
+   * @param {MovableObject[]} items - Array der Items (z.B. Münzen, Flaschen).
+   * @param {Function} action - Die auszuführende Aktion beim Aufsammeln.
+   * @param {boolean} doSplice - True, wenn das Item aus dem Array gelöscht werden soll.
+   * @returns {void}
+   */
+  collectItems(items, action, doSplice) {
+    for (let i = items.length - 1; i >= 0; i--) {
+      if (this.world.character.isColliding(items[i])) {
+        items[i].stopIntervals();
+        action(items[i], i);
+        if (doSplice) items.splice(i, 1);
       }
     }
   }
@@ -199,13 +253,13 @@ class CollisionManager {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

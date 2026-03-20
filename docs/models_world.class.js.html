@@ -27,7 +27,8 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Repräsentiert die zentrale Spielwelt.
+ * @class World
+ * @description Repräsentiert die zentrale Spielwelt.
  * Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Logik-Komponenten.
  */
 class World {
@@ -41,7 +42,6 @@ class World {
   coins = [];
   salsaBottles = [];
   throwableObjects = [];
-  lastThrowTime = 0;
   backgroundObjects = [];
   energyBalls = [];
   statusBar = new StatusBar();
@@ -55,7 +55,6 @@ class World {
   bossSpawned = false;
   bossDying = false;
   isActive = true;
-  lastShootTime = 0;
   score = 0;
   highscore = 0;
   highscoreName = "Anonym";
@@ -63,35 +62,37 @@ class World {
   shake_x = 0;
   shake_y = 0;
   chickenFlashTime = 0;
-  flashImage = new Image();
 
-  // Manager
   levelManager;
   collisionManager;
+  combatManager;
+  renderer;
 
   shotgun_sound = new Audio("audio/shotgun.mp3");
   chicken_dead_sound = new Audio("audio/chickenDead.mp3");
   background_sound =
     typeof background_sound !== "undefined"
       ? background_sound
-      : new Audio("audio/hauptspiel.wav"); // Nutzt das globale entsperrte Audio
+      : new Audio("audio/hauptspiel.wav");
   coin_sound = new Audio("audio/coin.mp3");
   gatling_sound = new Audio("audio/gatlinggun.mp3");
   chickenshot_sound = new Audio("audio/chickenshot.mp3");
 
+  /**
+   * @param {HTMLCanvasElement} canvas - Das Canvas-Element, auf dem das Spiel gezeichnet wird.
+   * @param {Keyboard} keyboard - Das Keyboard-Objekt zur Abfrage von Tastatureingaben.
+   */
   constructor(canvas, keyboard) {
-    this.flashImage.src =
-      "img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png"; // &lt;-- BITTE HIER DEINEN BILD-PFAD EINTRAGEN!
     this.ctx = canvas.getContext("2d");
     this.canvas = canvas;
     this.keyboard = keyboard;
     this.character = new Character();
 
-    // Manager initialisieren
     this.levelManager = new LevelManager(this);
     this.collisionManager = new CollisionManager(this);
+    this.combatManager = new CombatManager(this);
+    this.renderer = new WorldRenderer(this, canvas);
 
-    // Highscore initialisieren (höchster Wert aus der Liste)
     try {
       let storedList = JSON.parse(localStorage.getItem("highscoreList"));
       if (storedList &amp;&amp; Array.isArray(storedList) &amp;&amp; storedList.length > 0) {
@@ -109,15 +110,16 @@ class World {
     this.levelManager.updateClouds();
 
     this.setWorld();
-    this.draw();
+    this.renderer.draw();
     this.run();
     this.background_sound.loop = true;
-    this.background_sound.currentTime = 0; // Setzt den Track auf Anfang
+    this.background_sound.currentTime = 0;
     this.background_sound.play().catch(() => {});
   }
 
   /**
-   * Verknüpft die Welt mit den Objekten, damit diese Zugriff auf die Welt haben.
+   * Weist den relevanten Spielobjekten eine Referenz auf die Welt zu.
+   * @returns {void}
    */
   setWorld() {
     this.character.world = this;
@@ -126,11 +128,12 @@ class World {
 
   /**
    * Startet die Haupt-Spielschleife (Game Loop).
+   * @returns {void}
    */
   run() {
     this.runInterval = setInterval(() => {
-      this.checkShooting();
-      this.checkThrowing();
+      this.combatManager.checkShooting();
+      this.combatManager.checkThrowing();
       this.collisionManager.checkCollisions();
       this.levelManager.checkBossSpawn();
       this.checkExplosions();
@@ -146,30 +149,32 @@ class World {
 
   /**
    * Pausiert das Spiel und stoppt alle aktiven Game-Loops.
+   * @returns {void}
    */
   stopGame() {
     clearInterval(this.runInterval);
     this.levelManager.stop();
     this.background_sound.pause();
-    this.character.stopIntervals(); // Auch den Charakter stoppen
+    this.character.stopIntervals();
     this.isActive = false;
   }
 
   /**
    * Aktualisiert den Treibstoff (Münzleiste) während des Fliegens.
+   * @returns {void}
    * Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.
    */
   updateFuel() {
     if (this.character.isFlying) {
       let currentFuel = this.coinBar.percentage;
-      currentFuel -= 0.15; // Verbraucht kontinuierlich Treibstoff (ca. 11 Sekunden bei voller Leiste)
+      currentFuel -= 0.0375;
       if (currentFuel &lt;= 0) {
         currentFuel = 0;
         if (this.character.isFlying) {
-          this.character.toggleFlying(); // Pepe fällt auf den Boden
+          this.character.toggleFlying();
         }
-        if (this.character.currentWeapon === 'broom') {
-          this.character.currentWeapon = 'shotgun'; // Setzt die Waffe zurück
+        if (this.character.currentWeapon === "broom") {
+          this.character.currentWeapon = "uzi";
         }
       }
       this.coinBar.setPercentage(currentFuel);
@@ -178,10 +183,10 @@ class World {
 
   /**
    * Richtet den fliegenden Charakter in Richtung des Mauszeigers (Fadenkreuz) aus.
+   * @returns {void}
    */
   updateCharacterAngle() {
     if (this.character.isFlying) {
-      // Charakter zum Mauszeiger ausrichten
       let worldMouseX = mousePosition.x - this.camera_x - this.shake_x;
       let worldMouseY = mousePosition.y - this.shake_y;
 
@@ -205,6 +210,7 @@ class World {
   /**
    * Aktualisiert die allgemeine Spiellautstärke.
    * @param {number} volume - Der neue Lautstärke-Wert.
+   * @returns {void}
    */
   updateVolume(volume) {
     this.volume = volume;
@@ -226,279 +232,9 @@ class World {
   }
 
   /**
-   * Prüft, ob Schießen angefordert wurde, steuert die Feuerraten und erstellt die Projektile.
-   */
-  checkShooting() {
-    if (this.keyboard.D) {
-      let currentTime = new Date().getTime();
-
-      let delay = 200;
-      if (this.character.isFlying &amp;&amp; currentTime - this.lastShootTime > 100) {
-        this.lastShootTime = currentTime;
-        this.character.shoot();
-
-        let ammoImage = null; // Standard Munition
-        let isChickenShot = false;
-
-        // Wenn Huhn aufgespießt ist
-        if (this.character.impaledChicken) {
-          this.character.shotsWithChicken++;
-          // Nach 10 Schüssen (oder "ein paar Kugeln") wird das Huhn verschossen
-          if (this.character.shotsWithChicken > 10) {
-            let imgPath =
-              this.character.IMPALED_CHICKEN_IMAGES[
-                this.character.shotsWithChicken % 2
-              ];
-            if (this.character.imageCache[imgPath]) {
-              ammoImage = this.character.imageCache[imgPath];
-            }
-            this.character.impaledChicken = false; // Huhn ist weg
-            this.character.shotsWithChicken = 0;
-            isChickenShot = true;
-          }
-        }
-
-        let startX = this.character.otherDirection
-          ? this.character.x - 20
-          : this.character.x + 200;
-        let startY = this.character.y + 150;
-
-        let nearestEnemy = null;
-        let minDistance = 1000;
-        this.enemies.forEach((enemy) => {
-          if (!enemy.isDead()) {
-            let dx = enemy.x + enemy.width / 2 - startX;
-            let dy = enemy.y + enemy.height / 2 - startY;
-            let distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance &lt; minDistance) {
-              minDistance = distance;
-              nearestEnemy = enemy;
-            }
-          }
-        });
-
-        let spread = Math.random() * 20 - 10;
-
-        let sound;
-        if (this.character.impaledChicken || isChickenShot) {
-          sound = this.chickenshot_sound.cloneNode(true);
-          this.chickenFlashTime = new Date().getTime(); // Zeitstempel für Blitz-Effekt setzen
-        } else {
-          sound = this.gatling_sound.cloneNode(true);
-        }
-        sound.volume = this.volume;
-        sound.play().catch(() => {});
-
-        let bullet = new GatlingBullet(
-          startX,
-          startY,
-          this.character.otherDirection,
-          spread,
-          nearestEnemy,
-          this,
-          ammoImage, // Neues Argument übergeben
-        );
-
-        if (isChickenShot) {
-          bullet.width = 60; // Größeres Projektil für das Huhn
-          bullet.height = 60;
-          bullet.isSpinning = true; // Aktiviert die Vorwärts-Rotation im Flug
-
-          // Federn (Partikel) erzeugen
-          for (let i = 0; i &lt; 20; i++) {
-            let color =
-              Math.random() > 0.5
-                ? "rgba(255, 255, 255, 1)"
-                : "rgba(139, 69, 19, 1)";
-            this.particles.push(
-              new Particle(
-                startX + Math.random() * 40 - 20,
-                startY + Math.random() * 40 - 20,
-                color,
-              ),
-            );
-          }
-        }
-
-        this.bullets.push(bullet);
-
-        this.casings.push(
-          new ShellCasing(
-            this.character.x + this.character.width / 2,
-            this.character.y + 140,
-            this.character.otherDirection,
-          ),
-        );
-      } else if (
-        !this.character.isFlying &amp;&amp;
-        currentTime - this.lastShootTime > (this.character.currentWeapon === 'uzi' ? 100 : delay)
-      ) {
-        if (this.character.currentWeapon === 'uzi') {
-          // UZI LOGIK: Schnellfeuermodus (D-Taste)
-          this.lastShootTime = currentTime;
-          this.character.shootUziForward();
-
-          let sound = this.gatling_sound.cloneNode(true);
-          sound.volume = this.volume;
-          sound.play().catch(() => {});
-
-          let startX = this.character.otherDirection
-            ? this.character.x
-            : this.character.x + 100;
-          let startY = this.character.y + 140;
-
-          // Gegner-Zielerfassung für die Uzi
-          let nearestEnemy = null;
-          let minDistance = 1000; // Suchradius
-          this.enemies.forEach((enemy) => {
-            if (!enemy.isDead()) {
-              let dx = enemy.x + enemy.width / 2 - startX;
-              let dy = enemy.y + enemy.height / 2 - startY;
-              let distance = Math.sqrt(dx * dx + dy * dy);
-              if (distance &lt; minDistance) {
-                minDistance = distance;
-                nearestEnemy = enemy;
-              }
-            }
-          });
-
-          let spread = Math.random() * 10 - 5;
-          let bullet = new GatlingBullet(
-            startX,
-            startY,
-            this.character.otherDirection,
-            spread,
-            nearestEnemy,
-            this,
-          );
-          this.bullets.push(bullet);
-
-          this.casings.push(
-            new ShellCasing(
-              this.character.x + this.character.width / 2,
-              this.character.y + 140,
-              this.character.otherDirection,
-            ),
-          );
-        } else if (this.character.shoot()) {
-          // SHOTGUN LOGIK
-          this.lastShootTime = currentTime;
-
-          let sound = this.shotgun_sound.cloneNode(true);
-          sound.volume = this.volume;
-          sound.play().catch(() => {});
-
-          let startX = this.character.otherDirection
-            ? this.character.x
-            : this.character.x + 80;
-          let startY = this.character.y + 150;
-
-          let nearestEnemy = null;
-          let minDistance = 1000;
-          this.enemies.forEach((enemy) => {
-            if (!enemy.isDead()) {
-              let dx = enemy.x + enemy.width / 2 - startX;
-              let dy = enemy.y + enemy.height / 2 - startY;
-              let distance = Math.sqrt(dx * dx + dy * dy);
-              if (distance &lt; minDistance) {
-                minDistance = distance;
-                nearestEnemy = enemy;
-              }
-            }
-          });
-
-          this.bullets.push(
-            new Bullet(
-              startX,
-              startY,
-              this.character.otherDirection,
-              -20,
-              nearestEnemy,
-              this,
-            ),
-            new Bullet(
-              startX,
-              startY,
-              this.character.otherDirection,
-              -40,
-              nearestEnemy,
-              this,
-            ),
-            new Bullet(
-              startX,
-              startY,
-              this.character.otherDirection,
-              0,
-              nearestEnemy,
-              this,
-            ),
-          );
-
-          this.casings.push(
-            new ShellCasing(
-              this.character.x + this.character.width / 2,
-              this.character.y + 140,
-              this.character.otherDirection,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Überprüft, ob die Taste zum Werfen (S) gedrückt wurde und wirft eine Salsa-Flasche.
-   */
-  checkThrowing() {
-    if (this.keyboard.S &amp;&amp; this.character.bottles > 0) {
-      let currentTime = new Date().getTime();
-      if (currentTime - this.lastThrowTime > 500) {
-        this.lastThrowTime = currentTime;
-        this.character.bottles--;
-        
-        let startX = this.character.otherDirection ? this.character.x - 20 : this.character.x + 50;
-        let bottle = new ThrowableBottle(
-          startX,
-          this.character.y + 100,
-          this.character.otherDirection
-        );
-        bottle.world = this;
-        this.throwableObjects.push(bottle);
-      }
-    }
-  }
-
-  /**
-   * Löst den Uzi-Kreisangriff aus, bei dem Kugeln kreisförmig (360 Grad) verschossen werden.
-   */
-  triggerUziCircleAttack() {
-    if (this.character.isUziCircle) return; // Cooldown / Blockierung bis Animation beendet ist
-    this.character.shootUziCircle(); // Startet die 4 Animations-Bilder
-
-    let sound = this.gatling_sound.cloneNode(true);
-    sound.volume = this.volume;
-    sound.play().catch(() => {});
-
-    let startX = this.character.x + this.character.width / 2;
-    let startY = this.character.y + this.character.height / 2;
-    let numBullets = 16; // Verschießt 16 Kugeln ringsherum
-
-    for (let i = 0; i &lt; numBullets; i++) {
-      let angle = (i * (Math.PI * 2)) / numBullets;
-      let bullet = new GatlingBullet(startX, startY, false, 0, null, this);
-      bullet.speedX = Math.cos(angle) * 30; // Berechnet den X-Winkel
-      bullet.speedY = Math.sin(angle) * 30; // Berechnet den Y-Winkel
-      // Dreht die Bilder von Kugeln, die nach links/hinten fliegen, horizontal um
-      if (bullet.speedX &lt; 0) {
-        bullet.otherDirection = true;
-      }
-      this.bullets.push(bullet);
-    }
-  }
-
-  /**
    * Sammelt eine Münze auf und füllt damit den Flugbesen-Treibstoff.
    * @param {number} index - Index der Münze im Welt-Array.
+   * @returns {void}
    */
   collectCoin(index) {
     this.coins.splice(index, 1);
@@ -514,7 +250,7 @@ class World {
     if (newPercentage >= 100) {
       newPercentage = 100;
       if (!this.character.isFlying) {
-        this.character.currentWeapon = 'broom';
+        this.character.currentWeapon = "broom";
         this.character.toggleFlying();
       }
     }
@@ -526,9 +262,9 @@ class World {
   /**
    * Entfernt Objekte (Feinde, Münzen, Items), die weit hinter dem Spieler liegen,
    * um Speicherplatz und Rechenleistung (Performance) zu sparen.
+   * @returns {void}
    */
   cleanupResources() {
-    // Lösche alles, was weit links aus dem Bild ist (ca. eine Bildschirmlänge hinter Pepe)
     let leftBoundary = this.character.x - 800;
 
     this.coins = this.coins.filter((c) => {
@@ -544,7 +280,7 @@ class World {
     });
 
     this.enemies = this.enemies.filter((e) => {
-      if (e instanceof Endboss) return true; // Boss niemals bereinigen
+      if (e instanceof Endboss) return true;
       const keep = e.x > leftBoundary;
       if (!keep) e.stopIntervals();
       return keep;
@@ -555,18 +291,29 @@ class World {
       if (!keep) b.stopIntervals();
       return keep;
     });
-
-    // Hintergrund und Wolken bereinigt der LevelManager bereits sehr effizient in updateBackground/updateClouds!
   }
 
+  /**
+   * Bereinigt gelöschte oder abgelaufene Explosionen aus dem Array.
+   * @returns {void}
+   */
   checkExplosions() {
     this.explosions = this.explosions.filter((e) => !e.toDelete);
   }
 
+  /**
+   * Bereinigt gelöschte oder abgelaufene Patronenhülsen aus dem Array.
+   * @returns {void}
+   */
   checkCasings() {
     this.casings = this.casings.filter((casing) => !casing.toDelete);
   }
 
+  /**
+   * Erzeugt Lauf-Partikel (Staub) am Boden, wenn der Charakter sich bewegt,
+   * und entfernt alte Partikel aus dem Array.
+   * @returns {void}
+   */
   checkParticles() {
     this.particles = this.particles.filter((p) => !p.toDelete);
 
@@ -582,24 +329,44 @@ class World {
     }
   }
 
+  /**
+   * Prüft kontinuierlich, ob der aktuelle Punktestand den Highscore übersteigt.
+   * @returns {void}
+   */
   checkHighscore() {
     if (this.score > this.highscore) {
       this.highscore = this.score;
     }
   }
 
+  /**
+   * Wird aufgerufen, wenn die HP des Charakters auf 0 fallen. Beendet den Game Loop.
+   * @returns {void}
+   */
   gameOver() {
     console.log("Game Over");
-    clearInterval(this.runInterval);
-    this.background_sound.pause();
+    this.stopGame();
+    clearAllIntervals();
 
     checkEndGame(this.score, false);
   }
 
+  /**
+   * Wird aufgerufen, wenn der Endboss stirbt. Beendet das Spiel als gewonnen.
+   * @returns {void}
+   */
   gameWon() {
+    this.stopGame();
+    clearAllIntervals();
     checkEndGame(this.score, true);
   }
 
+  /**
+   * Erzeugt einen Screen-Shake-Effekt (Wackeln der Kamera), z.B. bei einem Treffer des Bosses.
+   * @param {number} intensity - Stärke des Wackelns in Pixel.
+   * @param {number} duration - Dauer des Effekts in Millisekunden.
+   * @returns {void}
+   */
   shake(intensity, duration) {
     let interval = setInterval(() => {
       this.shake_x = Math.random() * intensity - intensity / 2;
@@ -612,298 +379,6 @@ class World {
       this.shake_y = 0;
     }, duration);
   }
-
-  /**
-   * Die zentrale Render-Schleife. Zeichnet jeden Frame alle Objekte neu auf das Canvas.
-   */
-  draw() {
-    if (!this.isActive) return;
-
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    this.ctx.translate(this.camera_x + this.shake_x, this.shake_y);
-
-    // Hintergrundobjekte und Wolken mit Parallax-Effekt zeichnen.
-    // Diese werden manuell gezeichnet, um die komplexe addToMap-Logik zu umgehen
-    // und den Parallax-Offset einfach anwenden zu können.
-    this.backgroundObjects.forEach((bgo) => {
-      if (this.isVisible(bgo)) {
-        const parallaxOffset = this.camera_x * (bgo.parallaxFactor - 1);
-        if (bgo.img) {
-          this.ctx.drawImage(
-            bgo.img,
-            bgo.x + parallaxOffset,
-            bgo.y,
-            bgo.width,
-            bgo.height,
-          );
-        }
-      }
-    });
-
-    this.clouds.forEach((cloud) => {
-      if (this.isVisible(cloud)) {
-        const parallaxOffset = this.camera_x * (cloud.parallaxFactor - 1);
-        if (cloud.img) {
-          this.ctx.drawImage(
-            cloud.img,
-            cloud.x + parallaxOffset,
-            cloud.y,
-            cloud.width,
-            cloud.height,
-          );
-        }
-      }
-    });
-
-    if (this.character.imageLoaded) {
-      this.addToMap(this.character);
-    }
-
-    this.enemies.forEach((enemy) => {
-      if (enemy.imageLoaded &amp;&amp; this.isVisible(enemy)) {
-        this.addToMap(enemy);
-      }
-    });
-
-    this.bullets.forEach((bullet) => {
-      if (bullet.imageLoaded &amp;&amp; this.isVisible(bullet)) {
-        this.addToMap(bullet);
-      }
-    });
-
-    this.casings.forEach((casing) => {
-      if (casing.imageLoaded &amp;&amp; this.isVisible(casing)) {
-        this.addToMap(casing);
-      }
-    });
-
-    this.explosions.forEach((explosion) => {
-      if (this.isVisible(explosion)) {
-        this.addToMap(explosion);
-      }
-    });
-
-    this.throwableObjects.forEach((bottle) => {
-      if (bottle.imageLoaded &amp;&amp; this.isVisible(bottle)) {
-        this.addToMap(bottle);
-      }
-    });
-
-    this.particles.forEach((particle) => {
-      if (this.isVisible(particle)) {
-        particle.draw(this.ctx);
-      }
-    });
-
-    this.coins.forEach((coin) => {
-      if (this.isVisible(coin)) {
-        this.addToMap(coin);
-      }
-    });
-
-    this.salsaBottles.forEach((bottle) => {
-      if (bottle.imageLoaded &amp;&amp; this.isVisible(bottle)) {
-        this.addToMap(bottle);
-      }
-    });
-
-    this.energyBalls.forEach((ball) => {
-      if (this.isVisible(ball)) {
-        this.addToMap(ball);
-      }
-    });
-
-    this.ctx.translate(-this.camera_x - this.shake_x, -this.shake_y);
-
-    this.addToMap(this.statusBar);
-    this.addToMap(this.coinBar);
-
-    this.ctx.font = "40px sans-serif";
-    this.ctx.fillStyle = "white";
-    this.ctx.fillText("+ " + this.score, 320, 100);
-
-    this.ctx.font = "30px sans-serif";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      "Level: " +
-        this.levelManager.level +
-        " | Zeit: " +
-        (this.levelManager.maxLevelTime - this.levelManager.levelTimer) +
-        "s",
-      360,
-      50,
-    );
-    this.ctx.textAlign = "start";
-
-    if (this.levelManager.bossSpawned) {
-      this.addToMap(this.endbossBar);
-    }
-
-    this.camera_x = -this.character.x + 100;
-
-    let self = this;
-    requestAnimationFrame(function () {
-      self.draw();
-    });
-  }
-
-  /**
-   * Prüft, ob ein Objekt aktuell im sichtbaren Bereich der Kamera ist.
-   * @param {MovableObject} mo - Das zu überprüfende Objekt.
-   * @returns {boolean}
-   */
-  isVisible(mo) {
-    // Wenn ein Objekt einen parallaxFactor hat (Hintergrund, Wolken), muss dessen
-    // Position anders berechnet werden als bei normalen Objekten (Gegner, Pepe).
-    const parallax = mo.parallaxFactor !== undefined ? mo.parallaxFactor : 1;
-    const screenX = mo.x + this.camera_x * parallax;
-
-    return screenX + mo.width > -100 &amp;&amp; screenX &lt; this.canvas.width + 100;
-  }
-
-  /**
-   * Zeichnet ein Objekt auf die Karte, inkl. möglicher Spiegelung und Rotation.
-   * @param {MovableObject} mo - Das zu zeichnende Objekt.
-   */
-  addToMap(mo) {
-    if (mo.otherDirection) {
-      this.flipImage(mo);
-    }
-
-    let rotate = mo.angle &amp;&amp; mo.angle !== 0;
-
-    if (rotate) {
-      this.ctx.save();
-      this.ctx.translate(mo.x + mo.width / 2, mo.y + mo.height / 2);
-
-      if (mo instanceof Character &amp;&amp; mo.isUpsideDown) {
-        this.ctx.scale(1, -1);
-      }
-
-      this.ctx.rotate(mo.angle);
-
-      // EXTRAS: Zeichne das aufgespießte Huhn auf die Waffe, wenn es existiert
-      if (mo instanceof Character &amp;&amp; mo.impaledChicken) {
-        this.ctx.save();
-        // Position anpassen: X verschiebt nach vorne/hinten, Y nach oben/unten auf der Waffe
-        this.ctx.translate(120, 1);
-
-        let isFlashing = new Date().getTime() - this.chickenFlashTime &lt; 100;
-
-        // Mündungsfeuer-Effekt: Huhn kurz aufhellen
-        if (isFlashing) {
-          this.ctx.filter = "brightness(200%)";
-        }
-
-        // Das Huhn wechselt nun durchgehend alle 100ms das Bild, unabhängig von den Schüssen
-        let chickenAnimIndex =
-          Math.floor(new Date().getTime() / 500) %
-          mo.IMPALED_CHICKEN_IMAGES.length;
-        let chickenImgPath = mo.IMPALED_CHICKEN_IMAGES[chickenAnimIndex];
-        let chickenImg = mo.imageCache[chickenImgPath];
-
-        // Bild zentriert an der neuen Position zeichnen
-        if (chickenImg) {
-          this.ctx.save();
-          // Spiegelt das Huhn horizontal, damit es in Pepes Blickrichtung schaut
-          this.ctx.scale(-1, 1);
-          // Falls das Huhn zusätzlich noch flach auf der Waffe liegen soll, entferne hier die zwei //
-          // this.ctx.rotate(Math.PI / 2);
-          this.ctx.drawImage(chickenImg, -75, -75, 150, 150);
-          this.ctx.restore();
-        }
-        this.ctx.filter = "none"; // Filter zurücksetzen, damit das Flacker-Bild normal bleibt
-
-        // Zusätzliches Flacker-Bild über/vor das Huhn zeichnen
-        if (isFlashing &amp;&amp; this.flashImage.complete) {
-          // Mündungsfeuer anpassen:
-          // drawImage(Bild, X-Position, Y-Position, Breite, Höhe)
-          // Um den Blitz weiter nach vorne zu schieben, ändere das erste -40 zu z.B. -60 oder -80
-          this.ctx.drawImage(this.flashImage, -40, -40, 80, 80);
-        }
-        this.ctx.restore();
-      }
-    }
-
-    try {
-      if (mo.img) {
-        if (rotate) {
-          this.ctx.drawImage(
-            mo.img,
-            -mo.width / 2,
-            -mo.height / 2,
-            mo.width,
-            mo.height,
-          );
-        } else {
-          this.ctx.drawImage(mo.img, mo.x, mo.y, mo.width, mo.height);
-        }
-      }
-    } catch (e) {
-      console.warn("Fehler beim Zeichnen:", e);
-    }
-
-    if (rotate) {
-      this.ctx.restore();
-    }
-
-    if (mo.otherDirection) {
-      this.flipImageBack(mo);
-    }
-
-    // Statusbars immer zeichnen, nachdem das Bild ggf. zurückgedreht wurde,
-    // damit der Balken nicht spiegelverkehrt ist.
-    if (
-      !rotate &amp;&amp;
-      (mo instanceof Chicken ||
-        mo instanceof SmallChicken ||
-        mo instanceof Endboss) &amp;&amp;
-      !mo.isDead()
-    ) {
-      this.drawEnemyHealthBar(mo);
-    }
-  }
-  drawEnemyHealthBar(mo) {
-    if (!this.ctx) return;
-
-    if (mo instanceof Endboss) {
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(mo.x + 20, mo.y + 40, mo.width - 40, 15);
-
-      this.ctx.fillStyle = "red";
-      this.ctx.fillRect(mo.x + 22, mo.y + 42, mo.width - 44, 11);
-
-      this.ctx.fillStyle = "#ffae00";
-      let healthPercent = mo.energy / 100;
-      if (healthPercent &lt; 0) healthPercent = 0;
-      this.ctx.fillRect(
-        mo.x + 22,
-        mo.y + 42,
-        (mo.width - 44) * healthPercent,
-        11,
-      );
-    } else {
-      this.ctx.fillStyle = "red";
-      this.ctx.fillRect(mo.x, mo.y - 10, mo.width, 5);
-      this.ctx.fillStyle = "limegreen";
-      let healthPercent = mo.energy / 100;
-      if (healthPercent &lt; 0) healthPercent = 0;
-      this.ctx.fillRect(mo.x, mo.y - 10, mo.width * healthPercent, 5);
-    }
-  }
-
-  flipImage(mo) {
-    this.ctx.save();
-    this.ctx.translate(mo.width, 0);
-    this.ctx.scale(-1, 1);
-    mo.x = mo.x * -1;
-  }
-
-  flipImageBack(mo) {
-    mo.x = mo.x * -1;
-    this.ctx.restore();
-  }
 }
 </code></pre>
         </article>
@@ -915,13 +390,13 @@ class World {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

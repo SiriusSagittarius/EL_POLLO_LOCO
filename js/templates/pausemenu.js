@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für das Pausenmenü.
+ * @returns {string} Der HTML-String für das Pausenmenü.
+ */
 function renderPauseMenu() {
   return `
     <!-- Pause Menu Overlay -->

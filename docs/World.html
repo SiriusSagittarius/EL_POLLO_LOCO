@@ -30,9 +30,6 @@
     
         <h2><span class="attribs"><span class="type-signature"></span></span>World<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Repräsentiert die zentrale Spielwelt.
-Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Logik-Komponenten.</p></div>
-        
     
 </header>
 
@@ -42,8 +39,6 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
         
 
     
-    <h2>Constructor</h2>
-    
 
     
     <h4 class="name" id="World"><span class="type-signature"></span>new World<span class="signature">()</span><span class="type-signature"></span></h4>
@@ -52,6 +47,10 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
 
 
+
+<div class="description">
+    Repräsentiert die zentrale Spielwelt.Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Logik-Komponenten.
+</div>
 
 
 
@@ -94,7 +93,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line5">line 5</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line1">line 1</a>
     </li></ul></dd>
     
 
@@ -150,7 +149,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
 
     
-    <h4 class="name" id="addToMap"><span class="type-signature"></span>addToMap<span class="signature">(mo)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="checkCasings"><span class="type-signature"></span>checkCasings<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -158,144 +157,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
 
 
 <div class="description">
-    <p>Zeichnet ein Objekt auf die Karte, inkl. möglicher Spiegelung und Rotation.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>mo</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="MovableObject.html">MovableObject</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Das zu zeichnende Objekt.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line741">line 741</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="checkShooting"><span class="type-signature"></span>checkShooting<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Prüft, ob Schießen angefordert wurde, steuert die Feuerraten und erstellt die Projektile.</p>
+    Bereinigt gelöschte oder abgelaufene Patronenhülsen aus dem Array.
 </div>
 
 
@@ -339,7 +201,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line203">line 203</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line280">line 280</a>
     </li></ul></dd>
     
 
@@ -364,6 +226,24 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -375,7 +255,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
 
     
-    <h4 class="name" id="checkThrowing"><span class="type-signature"></span>checkThrowing<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="checkExplosions"><span class="type-signature"></span>checkExplosions<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -383,7 +263,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
 
 
 <div class="description">
-    <p>Überprüft, ob die Taste zum Werfen (S) gedrückt wurde und wirft eine Salsa-Flasche.</p>
+    Bereinigt gelöschte oder abgelaufene Explosionen aus dem Array.
 </div>
 
 
@@ -427,7 +307,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line424">line 424</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line272">line 272</a>
     </li></ul></dd>
     
 
@@ -452,6 +332,24 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -463,7 +361,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
     
 
     
-    <h4 class="name" id="cleanupResources"><span class="type-signature"></span>cleanupResources<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="checkHighscore"><span class="type-signature"></span>checkHighscore<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -471,8 +369,7 @@ Sie verwaltet den Game-Loop, das Rendering auf dem Canvas und verknüpft alle Lo
 
 
 <div class="description">
-    <p>Entfernt Objekte (Feinde, Münzen, Items), die weit hinter dem Spieler liegen,
-um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
+    Prüft kontinuierlich, ob der aktuelle Punktestand den Highscore übersteigt.
 </div>
 
 
@@ -516,7 +413,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line502">line 502</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line308">line 308</a>
     </li></ul></dd>
     
 
@@ -541,6 +438,24 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -552,7 +467,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="collectCoin"><span class="type-signature"></span>collectCoin<span class="signature">(index)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="checkParticles"><span class="type-signature"></span>checkParticles<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -560,7 +475,219 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Sammelt eine Münze auf und füllt damit den Flugbesen-Treibstoff.</p>
+    Erzeugt Lauf-Partikel (Staub) am Boden, wenn der Charakter sich bewegt,und entfernt alte Partikel aus dem Array.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line289">line 289</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="cleanupResources"><span class="type-signature"></span>cleanupResources<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Entfernt Objekte (Feinde, Münzen, Items), die weit hinter dem Spieler liegen,um Speicherplatz und Rechenleistung (Performance) zu sparen.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line239">line 239</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="collectCoin"><span class="type-signature"></span>collectCoin<span class="signature">(index)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Sammelt eine Münze auf und füllt damit den Flugbesen-Treibstoff.
 </div>
 
 
@@ -612,7 +739,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
             
 
-            <td class="description last"><p>Index der Münze im Welt-Array.</p></td>
+            <td class="description last">Index der Münze im Welt-Array.</td>
         </tr>
 
     
@@ -653,232 +780,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line475">line 475</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="draw"><span class="type-signature"></span>draw<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Die zentrale Render-Schleife. Zeichnet jeden Frame alle Objekte neu auf das Canvas.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line591">line 591</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="isVisible"><span class="type-signature"></span>isVisible<span class="signature">(mo)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Prüft, ob ein Objekt aktuell im sichtbaren Bereich der Kamera ist.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>mo</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="MovableObject.html">MovableObject</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Das zu überprüfende Objekt.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line728">line 728</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line211">line 211</a>
     </li></ul></dd>
     
 
@@ -914,7 +816,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     </dt>
     <dd>
         
-<span class="param-type">boolean</span>
+<span class="param-type">void</span>
 
 
     </dd>
@@ -932,7 +834,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="run"><span class="type-signature"></span>run<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="gameOver"><span class="type-signature"></span>gameOver<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -940,7 +842,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Startet die Haupt-Spielschleife (Game Loop).</p>
+    Wird aufgerufen, wenn die HP des Charakters auf 0 fallen. Beendet den Game Loop.
 </div>
 
 
@@ -984,7 +886,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line102">line 102</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line318">line 318</a>
     </li></ul></dd>
     
 
@@ -1009,6 +911,24 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1020,7 +940,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="setWorld"><span class="type-signature"></span>setWorld<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="gameWon"><span class="type-signature"></span>gameWon<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -1028,7 +948,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Verknüpft die Welt mit den Objekten, damit diese Zugriff auf die Welt haben.</p>
+    Wird aufgerufen, wenn der Endboss stirbt. Beendet das Spiel als gewonnen.
 </div>
 
 
@@ -1072,7 +992,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line94">line 94</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line330">line 330</a>
     </li></ul></dd>
     
 
@@ -1097,6 +1017,24 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1108,7 +1046,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="stopGame"><span class="type-signature"></span>stopGame<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="run"><span class="type-signature"></span>run<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -1116,7 +1054,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Pausiert das Spiel und stoppt alle aktiven Game-Loops.</p>
+    Startet die Haupt-Spielschleife (Game Loop).
 </div>
 
 
@@ -1160,7 +1098,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line122">line 122</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line105">line 105</a>
     </li></ul></dd>
     
 
@@ -1185,6 +1123,24 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1196,7 +1152,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="triggerUziCircleAttack"><span class="type-signature"></span>triggerUziCircleAttack<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="setWorld"><span class="type-signature"></span>setWorld<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -1204,7 +1160,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Löst den Uzi-Kreisangriff aus, bei dem Kugeln kreisförmig (360 Grad) verschossen werden.</p>
+    Weist den relevanten Spielobjekten eine Referenz auf die Welt zu.
 </div>
 
 
@@ -1248,7 +1204,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line446">line 446</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line96">line 96</a>
     </li></ul></dd>
     
 
@@ -1273,6 +1229,24 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1284,7 +1258,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="updateCharacterAngle"><span class="type-signature"></span>updateCharacterAngle<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="shake"><span class="type-signature"></span>shake<span class="signature">(intensity, duration)</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -1292,7 +1266,185 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Richtet den fliegenden Charakter in Richtung des Mauszeigers (Fadenkreuz) aus.</p>
+    Erzeugt einen Screen-Shake-Effekt (Wackeln der Kamera), z.B. bei einem Treffer des Bosses.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>intensity</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Stärke des Wackelns in Pixel.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>duration</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Dauer des Effekts in Millisekunden.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line342">line 342</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="stopGame"><span class="type-signature"></span>stopGame<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Pausiert das Spiel und stoppt alle aktiven Game-Loops.
 </div>
 
 
@@ -1336,7 +1488,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line154">line 154</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line126">line 126</a>
     </li></ul></dd>
     
 
@@ -1361,6 +1513,24 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1372,7 +1542,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
     
 
     
-    <h4 class="name" id="updateFuel"><span class="type-signature"></span>updateFuel<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="updateCharacterAngle"><span class="type-signature"></span>updateCharacterAngle<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -1380,8 +1550,7 @@ um Speicherplatz und Rechenleistung (Performance) zu sparen.</p>
 
 
 <div class="description">
-    <p>Aktualisiert den Treibstoff (Münzleiste) während des Fliegens.
-Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
+    Richtet den fliegenden Charakter in Richtung des Mauszeigers (Fadenkreuz) aus.
 </div>
 
 
@@ -1425,7 +1594,7 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line134">line 134</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line160">line 160</a>
     </li></ul></dd>
     
 
@@ -1450,6 +1619,24 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
 
 
 
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -1461,7 +1648,7 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
     
 
     
-    <h4 class="name" id="updateVolume"><span class="type-signature"></span>updateVolume<span class="signature">(volume)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="updateFuel"><span class="type-signature"></span>updateFuel<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -1469,7 +1656,117 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
 
 
 <div class="description">
-    <p>Aktualisiert die allgemeine Spiellautstärke.</p>
+    Aktualisiert den Treibstoff (Münzleiste) während des Fliegens.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line139">line 139</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="updateVolume"><span class="type-signature"></span>updateVolume<span class="signature">(volume)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Aktualisiert die allgemeine Spiellautstärke.
 </div>
 
 
@@ -1521,7 +1818,7 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
 
             
 
-            <td class="description last"><p>Der neue Lautstärke-Wert.</p></td>
+            <td class="description last">Der neue Lautstärke-Wert.</td>
         </tr>
 
     
@@ -1562,7 +1859,208 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line181">line 181</a>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line187">line 187</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>World<span class="signature">(canvas, keyboard)</span><span class="type-signature"></span></h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+
+    
+    <h4 class="name" id="World"><span class="type-signature"></span>new World<span class="signature">(canvas, keyboard)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>canvas</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">HTMLCanvasElement</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Das Canvas-Element, auf dem das Spiel gezeichnet wird.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>keyboard</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Keyboard</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Das Keyboard-Objekt zur Abfrage von Tastatureingaben.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line57">line 57</a>
     </li></ul></dd>
     
 
@@ -1592,6 +2090,1790 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
 
 
 
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="checkCasings"><span class="type-signature"></span>checkCasings<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Bereinigt gelöschte oder abgelaufene Patronenhülsen aus dem Array.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line280">line 280</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="checkExplosions"><span class="type-signature"></span>checkExplosions<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Bereinigt gelöschte oder abgelaufene Explosionen aus dem Array.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line272">line 272</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="checkHighscore"><span class="type-signature"></span>checkHighscore<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Prüft kontinuierlich, ob der aktuelle Punktestand den Highscore übersteigt.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line308">line 308</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="checkParticles"><span class="type-signature"></span>checkParticles<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Erzeugt Lauf-Partikel (Staub) am Boden, wenn der Charakter sich bewegt,und entfernt alte Partikel aus dem Array.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line289">line 289</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="cleanupResources"><span class="type-signature"></span>cleanupResources<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Entfernt Objekte (Feinde, Münzen, Items), die weit hinter dem Spieler liegen,um Speicherplatz und Rechenleistung (Performance) zu sparen.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line239">line 239</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="collectCoin"><span class="type-signature"></span>collectCoin<span class="signature">(index)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Sammelt eine Münze auf und füllt damit den Flugbesen-Treibstoff.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Index der Münze im Welt-Array.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line211">line 211</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="gameOver"><span class="type-signature"></span>gameOver<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Wird aufgerufen, wenn die HP des Charakters auf 0 fallen. Beendet den Game Loop.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line318">line 318</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="gameWon"><span class="type-signature"></span>gameWon<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Wird aufgerufen, wenn der Endboss stirbt. Beendet das Spiel als gewonnen.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line330">line 330</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="run"><span class="type-signature"></span>run<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Startet die Haupt-Spielschleife (Game Loop).
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line105">line 105</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="setWorld"><span class="type-signature"></span>setWorld<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Weist den relevanten Spielobjekten eine Referenz auf die Welt zu.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line96">line 96</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="shake"><span class="type-signature"></span>shake<span class="signature">(intensity, duration)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Erzeugt einen Screen-Shake-Effekt (Wackeln der Kamera), z.B. bei einem Treffer des Bosses.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>intensity</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Stärke des Wackelns in Pixel.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>duration</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Dauer des Effekts in Millisekunden.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line342">line 342</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="stopGame"><span class="type-signature"></span>stopGame<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Pausiert das Spiel und stoppt alle aktiven Game-Loops.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line126">line 126</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="updateCharacterAngle"><span class="type-signature"></span>updateCharacterAngle<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Richtet den fliegenden Charakter in Richtung des Mauszeigers (Fadenkreuz) aus.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line160">line 160</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="updateFuel"><span class="type-signature"></span>updateFuel<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Aktualisiert den Treibstoff (Münzleiste) während des Fliegens.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line139">line 139</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="updateVolume"><span class="type-signature"></span>updateVolume<span class="signature">(volume)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Aktualisiert die allgemeine Spiellautstärke.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>volume</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Der neue Lautstärke-Wert.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="models_world.class.js.html">models/world.class.js</a>, <a href="models_world.class.js.html#line187">line 187</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
         
     
 
@@ -1608,13 +3890,13 @@ Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

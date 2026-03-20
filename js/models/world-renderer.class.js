@@ -1,5 +1,6 @@
 /**
- * Lagert die gesamte Render-Logik (das Zeichnen auf den Canvas) aus der World-Klasse aus.
+ * @class WorldRenderer
+ * @description Lagert die gesamte Render-Logik (das Zeichnen auf den Canvas) aus der World-Klasse aus.
  */
 class WorldRenderer {
   /**
@@ -20,6 +21,7 @@ class WorldRenderer {
 
   /**
    * Die zentrale Render-Schleife. Zeichnet jeden Frame alle Objekte neu auf das Canvas.
+   * @returns {void}
    */
   draw() {
     if (!this.world.isActive) return;
@@ -154,6 +156,20 @@ class WorldRenderer {
       this.addToMap(this.world.endbossBar);
     }
 
+    // Draw "Wrong Way" message if applicable
+    if (this.world.isShowingWrongWay) {
+      this.ctx.save();
+      this.ctx.font = "bold 40px sans-serif";
+      this.ctx.fillStyle = "rgba(255, 0, 0, 0.9)";
+      this.ctx.strokeStyle = "black";
+      this.ctx.lineWidth = 2;
+      this.ctx.textAlign = "center";
+      const text = "FALSCHE RICHTUNG!";
+      this.ctx.strokeText(text, this.canvas.width / 2, this.canvas.height / 2);
+      this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+      this.ctx.restore();
+    }
+
     this.world.camera_x = -this.world.character.x + 100;
 
     let self = this;
@@ -164,6 +180,8 @@ class WorldRenderer {
 
   /**
    * Prüft, ob ein Objekt aktuell im sichtbaren Bereich der Kamera ist.
+   * @param {MovableObject} mo - Das zu prüfende Objekt.
+   * @returns {boolean} True, wenn das Objekt sichtbar ist.
    */
   isVisible(mo) {
     const parallax = mo.parallaxFactor !== undefined ? mo.parallaxFactor : 1;
@@ -173,6 +191,8 @@ class WorldRenderer {
 
   /**
    * Zeichnet ein Objekt auf die Karte, inkl. möglicher Spiegelung und Rotation.
+   * @param {MovableObject} mo - Das zu zeichnende Objekt.
+   * @returns {void}
    */
   addToMap(mo) {
     if (mo.otherDirection) {
@@ -255,6 +275,7 @@ class WorldRenderer {
   /**
    * Zeichnet einen dynamischen Lebensbalken direkt über gewöhnlichen Feinden oder den großen Bossbalken.
    * @param {MovableObject} mo - Das Gegner-Objekt.
+   * @returns {void}
    */
   drawEnemyHealthBar(mo) {
     if (!this.ctx) return;
@@ -285,6 +306,7 @@ class WorldRenderer {
   /**
    * Spiegelt den Canvas horizontal, damit Objekte in die entgegengesetzte Richtung schauen.
    * @param {MovableObject} mo - Das zu spiegelnde Objekt.
+   * @returns {void}
    */
   flipImage(mo) {
     this.ctx.save();
@@ -296,6 +318,7 @@ class WorldRenderer {
   /**
    * Setzt die Canvas-Spiegelung für nachfolgende Objekte zurück.
    * @param {MovableObject} mo - Das zuvor gespiegelte Objekt.
+   * @returns {void}
    */
   flipImageBack(mo) {
     mo.x = mo.x * -1;

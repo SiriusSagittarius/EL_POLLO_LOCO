@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für das Einstellungsmenü.
+ * @returns {string} Der HTML-String für das Einstellungsmenü.
+ */
 function renderOptionsMenu() {
   return `
     <!-- Options Overlay -->

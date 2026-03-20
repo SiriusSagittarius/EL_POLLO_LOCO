@@ -27,7 +27,7 @@ function checkEndGame(score, won) {
   }
 }
 
-function saveHighscore() {} // Wird automatisch in checkEndGame() erledigt.
+function saveHighscore() {} 
 
 function getHighscores() {
   let stored = localStorage.getItem("highscoreList");

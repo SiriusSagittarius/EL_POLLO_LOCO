@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für die Eingabemaske bei einem neuen Highscore.
+ * @returns {string} Der HTML-String für die Highscore-Eingabe.
+ */
 function renderNewHighscoreMenu() {
   return `
     <!-- New Highscore Input Overlay -->

@@ -1,5 +1,6 @@
 /**
- * Basisklasse für alle beweglichen Objekte auf dem Spielfeld (Charakter, Gegner, Items).
+ * @class MovableObject
+ * @description Basisklasse für alle beweglichen Objekte im Spiel (Charakter, Gegner, Items etc.).
  */
 class MovableObject {
   x = 120;
@@ -24,8 +25,13 @@ class MovableObject {
   intervalIds = [];
 
   /**
+   * Erzeugt eine Instanz eines beweglichen Objekts.
+   */
+
+  /**
    * Lädt ein einzelnes Bild anhand des Dateipfads.
    * @param {string} path - Relativer Pfad zum Bild.
+   * @returns {void}
    */
   loadImage(path) {
     this.img = new Image();
@@ -41,6 +47,7 @@ class MovableObject {
   /**
    * Lädt ein Array von Bildern in den Cache (für Animationen).
    * @param {string[]} arr - Array mit Bildpfaden.
+   * @returns {void}
    */
   loadImages(arr) {
     arr.forEach((path) => {
@@ -51,7 +58,10 @@ class MovableObject {
   }
 
   /**
-   * Startet ein Intervall und speichert die ID, damit es gestoppt werden kann.
+   * Registriert eine Intervallfunktion und speichert deren ID, um sie später stoppen zu können.
+   * @param {Function} fn - Die auszuführende Funktion.
+   * @param {number} time - Das Intervall in Millisekunden.
+   * @returns {void}
    */
   setStoppableInterval(fn, time) {
     let id = setInterval(fn, time);
@@ -60,6 +70,7 @@ class MovableObject {
 
   /**
    * Stoppt alle laufenden Intervalle (Animationen/Bewegungen) dieses Objekts.
+   * @returns {void}
    */
   stopIntervals() {
     this.intervalIds.forEach(clearInterval);
@@ -68,6 +79,7 @@ class MovableObject {
 
   /**
    * Wendet Gravitation auf das Objekt an, sodass es nach unten fällt.
+   * @returns {void}
    */
   applyGravity() {
     this.setStoppableInterval(() => {
@@ -92,6 +104,7 @@ class MovableObject {
   /**
    * Spielt eine Animation ab, indem es durch ein Array von Bildern iteriert.
    * @param {string[]} images - Array von Bildpfaden für die Animation.
+   * @returns {void}
    */
   playAnimation(images) {
     let i = this.currentImage % images.length;
@@ -122,7 +135,9 @@ class MovableObject {
   }
 
   /**
-   * Reduziert die Energie des Objekts, wenn es getroffen wird.
+   * Verringert die Energie des Objekts um einen bestimmten Betrag.
+   * @param {number} [damage=5] - Der zugefügte Schaden.
+   * @returns {void}
    */
   hit(damage = 5) {
     this.energy -= damage;
@@ -135,7 +150,7 @@ class MovableObject {
 
   /**
    * Prüft, ob das Objekt gerade erst verletzt wurde (Unverwundbarkeits-Zeitfenster).
-   * @returns {boolean} True, wenn kürzlich getroffen.
+   * @returns {boolean} True, wenn seit dem letzten Treffer weniger als 1 Sekunde vergangen ist.
    */
   isHurt() {
     let timepassed = new Date().getTime() - this.lastHit;
@@ -145,12 +160,17 @@ class MovableObject {
 
   /**
    * Prüft, ob das Objekt tot ist (Energie <= 0).
-   * @returns {boolean} True, wenn tot.
+   * @returns {boolean} True, wenn die Energie 0 ist.
    */
   isDead() {
     return this.energy == 0;
   }
 
+  /**
+   * Zeichnet einen Debug-Rahmen (Hitbox) um das Objekt.
+   * @param {CanvasRenderingContext2D} ctx - Der 2D-Rendering-Kontext des Canvas.
+   * @returns {void}
+   */
   drawFrame(ctx) {
     if (
       this instanceof MovableObject &&

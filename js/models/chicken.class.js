@@ -1,3 +1,8 @@
+/**
+ * @class Chicken
+ * @description Repräsentiert einen normalen Hühner-Gegner.
+ * @extends MovableObject
+ */
 class Chicken extends MovableObject {
   y = 350;
   height = 80;
@@ -11,6 +16,10 @@ class Chicken extends MovableObject {
     "img/3_enemies_chicken/chicken_normal/1_walk/5_w.png",
   ];
 
+  /**
+   * Erzeugt eine Instanz eines Huhns.
+   * @param {number} [x] - Optionale Start-X-Position. Wenn nicht angegeben, wird eine zufällige Position gewählt.
+   */
   constructor(x) {
     super();
     this.loadImage("img/3_enemies_chicken/chicken_normal/1_walk/1_w.png");
@@ -25,6 +34,10 @@ class Chicken extends MovableObject {
     this.animate();
   }
 
+  /**
+   * Startet die Bewegungs- und Animationslogik für das Huhn.
+   * @returns {void}
+   */
   animate() {
     this.setStoppableInterval(() => {
       if (this.world && this.world.character) {

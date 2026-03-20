@@ -27,7 +27,8 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Basisklasse für alle beweglichen Objekte auf dem Spielfeld (Charakter, Gegner, Items).
+ * @class MovableObject
+ * @description Basisklasse für alle beweglichen Objekte im Spiel (Charakter, Gegner, Items etc.).
  */
 class MovableObject {
   x = 120;
@@ -49,11 +50,16 @@ class MovableObject {
     right: 0,
     bottom: 0,
   };
-  intervalIds = []; // Speicher für alle Intervalle des Objekts
+  intervalIds = [];
+
+  /**
+   * Erzeugt eine Instanz eines beweglichen Objekts.
+   */
 
   /**
    * Lädt ein einzelnes Bild anhand des Dateipfads.
    * @param {string} path - Relativer Pfad zum Bild.
+   * @returns {void}
    */
   loadImage(path) {
     this.img = new Image();
@@ -69,6 +75,7 @@ class MovableObject {
   /**
    * Lädt ein Array von Bildern in den Cache (für Animationen).
    * @param {string[]} arr - Array mit Bildpfaden.
+   * @returns {void}
    */
   loadImages(arr) {
     arr.forEach((path) => {
@@ -79,7 +86,10 @@ class MovableObject {
   }
 
   /**
-   * Startet ein Intervall und speichert die ID, damit es gestoppt werden kann.
+   * Registriert eine Intervallfunktion und speichert deren ID, um sie später stoppen zu können.
+   * @param {Function} fn - Die auszuführende Funktion.
+   * @param {number} time - Das Intervall in Millisekunden.
+   * @returns {void}
    */
   setStoppableInterval(fn, time) {
     let id = setInterval(fn, time);
@@ -88,6 +98,7 @@ class MovableObject {
 
   /**
    * Stoppt alle laufenden Intervalle (Animationen/Bewegungen) dieses Objekts.
+   * @returns {void}
    */
   stopIntervals() {
     this.intervalIds.forEach(clearInterval);
@@ -96,14 +107,16 @@ class MovableObject {
 
   /**
    * Wendet Gravitation auf das Objekt an, sodass es nach unten fällt.
+   * @returns {void}
    */
   applyGravity() {
     this.setStoppableInterval(() => {
       if ((this.isAboveGround() || this.speedY > 0) &amp;&amp; !this.isFlying) {
         this.y -= this.speedY;
         this.speedY -= this.acceleration;
-      } else if (!this.isFlying &amp;&amp; this.y > 150) {
+      } else if (!this.isFlying &amp;&amp; this.y >= 150) {
         this.y = 150;
+        this.speedY = 0;
       }
     }, 1000 / 25);
   }
@@ -119,6 +132,7 @@ class MovableObject {
   /**
    * Spielt eine Animation ab, indem es durch ein Array von Bildern iteriert.
    * @param {string[]} images - Array von Bildpfaden für die Animation.
+   * @returns {void}
    */
   playAnimation(images) {
     let i = this.currentImage % images.length;
@@ -149,10 +163,12 @@ class MovableObject {
   }
 
   /**
-   * Reduziert die Energie des Objekts, wenn es getroffen wird.
+   * Verringert die Energie des Objekts um einen bestimmten Betrag.
+   * @param {number} [damage=5] - Der zugefügte Schaden.
+   * @returns {void}
    */
-  hit() {
-    this.energy -= 5;
+  hit(damage = 5) {
+    this.energy -= damage;
     if (this.energy &lt; 0) {
       this.energy = 0;
     } else {
@@ -162,7 +178,7 @@ class MovableObject {
 
   /**
    * Prüft, ob das Objekt gerade erst verletzt wurde (Unverwundbarkeits-Zeitfenster).
-   * @returns {boolean} True, wenn kürzlich getroffen.
+   * @returns {boolean} True, wenn seit dem letzten Treffer weniger als 1 Sekunde vergangen ist.
    */
   isHurt() {
     let timepassed = new Date().getTime() - this.lastHit;
@@ -172,12 +188,17 @@ class MovableObject {
 
   /**
    * Prüft, ob das Objekt tot ist (Energie &lt;= 0).
-   * @returns {boolean} True, wenn tot.
+   * @returns {boolean} True, wenn die Energie 0 ist.
    */
   isDead() {
     return this.energy == 0;
   }
 
+  /**
+   * Zeichnet einen Debug-Rahmen (Hitbox) um das Objekt.
+   * @param {CanvasRenderingContext2D} ctx - Der 2D-Rendering-Kontext des Canvas.
+   * @returns {void}
+   */
   drawFrame(ctx) {
     if (
       this instanceof MovableObject &amp;&amp;
@@ -207,13 +228,13 @@ class MovableObject {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

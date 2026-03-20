@@ -1,8 +1,12 @@
 /**
- * Der LevelManager kontrolliert den Spielablauf, den Timer und das Spawnen
+ * @class LevelManager
+ * @description Kontrolliert den Spielablauf, den Timer und das Spawnen
  * von Gegnern, Münzen, Flaschen sowie das kontinuierliche Generieren des Hintergrunds.
  */
 class LevelManager {
+  /**
+   * @param {World} world - Eine Referenz auf die Haupt-Spielwelt.
+   */
   constructor(world) {
     this.world = world;
     this.level = 1;
@@ -18,6 +22,7 @@ class LevelManager {
 
   /**
    * Startet den Level-Timer und den Intervall zum Spawnen von Hühnern.
+   * @returns {void}
    */
   startLevelLogic() {
     this.levelTimer = 0;
@@ -59,6 +64,7 @@ class LevelManager {
   /**
    * Prüft, ob die Level-Zeit abgelaufen ist und triggert ggf. das
    * Erscheinen des Endbosses.
+   * @returns {void}
    */
   checkBossSpawn() {
     if (this.endlessMode) return;
@@ -79,6 +85,7 @@ class LevelManager {
 
   /**
    * Verteilt zufällig Münzen in der Welt.
+   * @returns {void}
    */
   spawnCoins() {
     for (let i = 0; i < 20; i++) {
@@ -90,6 +97,7 @@ class LevelManager {
 
   /**
    * Verteilt zufällig Salsa-Flaschen in der Welt.
+   * @returns {void}
    */
   spawnSalsaBottles() {
     for (let i = 0; i < 10; i++) {
@@ -99,19 +107,22 @@ class LevelManager {
 
   /**
    * Generiert dynamisch lückenlose Hintergrund-Ebenen (Himmel, Berge, Boden, Pflanzen)
-   * passend zur Fortbewegung des Spielers.
+   * passend zur Fortbewegung des Spielers (Infinite Scrolling).
+   * @returns {void}
    */
   updateBackground() {
     if (!this.world.character) return;
 
-    let minX = this.world.character.x - 2000;
-    let maxX = this.world.character.x + 2000;
+    const windowCenter = this.world.character.x - 500;
+
+    let minX = windowCenter - 2000;
+    let maxX = windowCenter + 2000;
     let startChunk = Math.floor(minX / this.bgWidth);
     let endChunk = Math.floor(maxX / this.bgWidth);
 
     for (let i = startChunk; i <= endChunk; i++) {
       let chunkX = i * this.bgWidth;
-      // Überprüfe, ob für dieses Segment (chunkX) bereits der Boden generiert wurde
+
       let exists = this.world.backgroundObjects.some(
         (bgo) => bgo.x === chunkX && bgo.parallaxFactor === 1 && bgo.y >= 380,
       );
@@ -123,7 +134,7 @@ class LevelManager {
 
     this.world.backgroundObjects = this.world.backgroundObjects.filter(
       (bgo) => {
-        const keep = Math.abs(bgo.x - this.world.character.x) < 4000;
+        const keep = Math.abs(bgo.x - windowCenter) < 4000;
         if (!keep) bgo.stopIntervals();
         return keep;
       },
@@ -133,6 +144,7 @@ class LevelManager {
   /**
    * Erzeugt einen kompletten Hintergrund-Block (Himmel, Berge, Boden, Kakteen) an einer bestimmten X-Koordinate.
    * @param {number} x - Die X-Position des neuen Blocks.
+   * @returns {void}
    */
   spawnBackgroundChunk(x) {
     let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
@@ -173,7 +185,7 @@ class LevelManager {
       "6.png",
       "7.png",
     ];
-    let cactusCount = 4 + Math.floor(Math.random() * 5);
+    let cactusCount = 2 + Math.floor(Math.random() * 3);
 
     for (let i = 0; i < cactusCount; i++) {
       let randomImage =
@@ -192,6 +204,10 @@ class LevelManager {
     }
   }
 
+  /**
+   * Sorgt dafür, dass immer genügend Wolken am Himmel sind und entfernt weit entfernte Wolken.
+   * @returns {void}
+   */
   updateClouds() {
     if (!this.world.character) return;
     while (this.world.clouds.length < 10) {
@@ -210,6 +226,7 @@ class LevelManager {
 
   /**
    * Stoppt die Timer und Spawn-Intervalle des Level-Managers.
+   * @returns {void}
    */
   stop() {
     clearInterval(this.spawnIntervalId);

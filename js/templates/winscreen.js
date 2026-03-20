@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für den "Gewonnen"-Bildschirm.
+ * @returns {string} Der HTML-String für den "Gewonnen"-Bildschirm.
+ */
 function renderWinScreen() {
   return `
     <!-- Win Screen -->

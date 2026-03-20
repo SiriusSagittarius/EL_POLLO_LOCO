@@ -1,4 +1,14 @@
+/**
+ * @class Particle
+ * @description Repräsentiert ein kleines Partikel für visuelle Effekte wie Staub, Rauch oder Funken.
+ * @extends MovableObject
+ */
 class Particle extends MovableObject {
+  /**
+   * @param {number} x - Die Start-X-Position des Partikels.
+   * @param {number} y - Die Start-Y-Position des Partikels.
+   * @param {string} [color="rgba(160, 82, 45, 1)"] - Die Farbe des Partikels.
+   */
   constructor(x, y, color = "rgba(160, 82, 45, 1)") {
     super();
     this.x = x;
@@ -14,6 +24,10 @@ class Particle extends MovableObject {
     this.animate();
   }
 
+  /**
+   * Startet die Animation des Partikels (Bewegung und Ausblenden).
+   * @returns {void}
+   */
   animate() {
     let interval = setInterval(() => {
       this.x += this.speedX;
@@ -26,6 +40,11 @@ class Particle extends MovableObject {
     }, 1000 / 60);
   }
 
+  /**
+   * Zeichnet das Partikel auf den Canvas.
+   * @param {CanvasRenderingContext2D} ctx - Der 2D-Rendering-Kontext.
+   * @returns {void}
+   */
   draw(ctx) {
     ctx.save();
     ctx.globalAlpha = this.alpha;

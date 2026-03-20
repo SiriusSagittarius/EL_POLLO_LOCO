@@ -1,4 +1,14 @@
+/**
+ * @class ShellCasing
+ * @description Repräsentiert eine ausgeworfene Patronenhülse als visuellen Effekt beim Schießen.
+ * @extends MovableObject
+ */
 class ShellCasing extends MovableObject {
+  /**
+   * @param {number} x - Die Start-X-Position der Hülse.
+   * @param {number} y - Die Start-Y-Position der Hülse.
+   * @param {boolean} characterDirection - Die Richtung des Charakters, um die Auswurfrichtung zu bestimmen.
+   */
   constructor(x, y, characterDirection) {
     super();
     this.loadImage(
@@ -19,6 +29,10 @@ class ShellCasing extends MovableObject {
     this.fadeOut();
   }
 
+  /**
+   * Wendet eine Gravitationssimulation auf die Hülse an, damit sie zu Boden fällt.
+   * @returns {void}
+   */
   applyShellGravity() {
     const gravityInterval = setInterval(() => {
       this.y -= this.speedY;
@@ -32,6 +46,10 @@ class ShellCasing extends MovableObject {
     }, 1000 / 60);
   }
 
+  /**
+   * Markiert die Hülse nach einer Verzögerung zum Löschen.
+   * @returns {void}
+   */
   fadeOut() {
     setTimeout(() => {
       this.toDelete = true;

@@ -1,3 +1,8 @@
+/**
+ * @class Cloud
+ * @description Repräsentiert eine sich bewegende Wolke im Hintergrund.
+ * @extends MovableObject
+ */
 class Cloud extends MovableObject {
   y = 20;
   width = 500;
@@ -6,6 +11,9 @@ class Cloud extends MovableObject {
   speed = 0.15;
 
   constructor(x) {
+    /**
+     * @param {number} x - Die anfängliche X-Position der Wolke.
+     */
     super();
     let randomImage = Math.random() < 0.5 ? "1.png" : "2.png";
     this.loadImage(`img/5_background/layers/4_clouds/${randomImage}`);
@@ -16,6 +24,10 @@ class Cloud extends MovableObject {
     this.animate();
   }
 
+  /**
+   * Startet die kontinuierliche Bewegung der Wolke nach links.
+   * @returns {void}
+   */
   animate() {
     this.setStoppableInterval(() => {
       this.x -= this.speed;

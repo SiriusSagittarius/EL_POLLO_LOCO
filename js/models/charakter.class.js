@@ -1,5 +1,7 @@
 /**
+ * @class Character
  * Repräsentiert die Hauptfigur (Pepe) und steuert deren Status, Eingaben und Animationen.
+ * @extends MovableObject
  */
 class Character extends MovableObject {
   height = 280;
@@ -151,6 +153,9 @@ class Character extends MovableObject {
   broom_sound = new Audio("audio/besenpower.mp3");
 
   constructor() {
+    /**
+     * Erzeugt eine Instanz des Spielcharakters.
+     */
     super();
     this.loadImage("img/2_character_pepe/1_idle/idle/I-1.png");
     this.loadImages(this.IMAGES_IDLE);
@@ -171,6 +176,7 @@ class Character extends MovableObject {
 
   /**
    * Startet die kontinuierliche Abfrage von Bewegungen und das Abspielen der jeweiligen Animationen.
+   * @returns {void}
    */
   animate() {
     setInterval(() => {
@@ -248,6 +254,7 @@ class Character extends MovableObject {
 
   /**
    * Lässt den Charakter springen.
+   * @returns {void}
    */
   jump() {
     this.speedY = 30;
@@ -256,6 +263,7 @@ class Character extends MovableObject {
 
   /**
    * Zieht bei einem Treffer Energie ab und spielt einen Sound ab.
+   * @returns {void}
    */
   hit() {
     this.hurt_sound.play().catch(() => {});
@@ -265,6 +273,7 @@ class Character extends MovableObject {
   /**
    * Aktualisiert die Spiellautstärke für die Effekte des Charakters.
    * @param {number} volume - Lautstärkewert (0.0 bis 1.0).
+   * @returns {void}
    */
   updateVolume(volume) {
     this.jump_sound.volume = volume;
@@ -291,6 +300,7 @@ class Character extends MovableObject {
   /**
    * Löst eine Feuerrad-Animation auf dem Besen aus (auf oder ab).
    * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
+   * @returns {void}
    */
   triggerWheelAnimation(deltaY) {
     if (this.isWheelUp || this.isWheelDown || this.isRotating) return;
@@ -308,6 +318,7 @@ class Character extends MovableObject {
   /**
    * Löst die Uzi-Rundumschlag-Animation aus.
    * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
+   * @returns {void}
    */
   triggerUziWheelAnimation(deltaY) {
     if (this.isUziWheelUp || this.isUziWheelDown) return;
@@ -324,6 +335,7 @@ class Character extends MovableObject {
 
   /**
    * Lässt den Charakter rotieren (z.B. bei speziellen Ausweichmanövern).
+   * @returns {void}
    */
   rotate() {
     if (!this.isRotating) {
@@ -338,6 +350,7 @@ class Character extends MovableObject {
 
   /**
    * Schaltet den Flugmodus (Besen) an oder aus.
+   * @returns {void}
    */
   toggleFlying() {
     this.isFlying = !this.isFlying;
@@ -353,6 +366,7 @@ class Character extends MovableObject {
 
   /**
    * Führt einen schnellen Schuss mit der Uzi nach vorne aus.
+   * @returns {void}
    */
   shootUziForward() {
     if (!this.isUziForward) {

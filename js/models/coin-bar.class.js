@@ -1,3 +1,7 @@
+/**
+ * @class CoinBar
+ * @description Repräsentiert die UI-Leiste für den Treibstoff des Flugbesens (Münzen).
+ */
 class CoinBar extends MovableObject {
   IMAGES = [
     "img/7_statusbars/1_statusbar/1_statusbar_coin/blue/0.png",
@@ -10,6 +14,9 @@ class CoinBar extends MovableObject {
 
   percentage = 0;
 
+  /**
+   * Erzeugt eine Instanz der CoinBar.
+   */
   constructor() {
     super();
     this.loadImages(this.IMAGES);
@@ -20,12 +27,21 @@ class CoinBar extends MovableObject {
     this.setPercentage(0);
   }
 
+  /**
+   * Setzt den Füllstand der Leiste in Prozent und aktualisiert das angezeigte Bild.
+   * @param {number} percentage - Der neue Prozentwert (0-100).
+   * @returns {void}
+   */
   setPercentage(percentage) {
     this.percentage = percentage;
     let path = this.IMAGES[this.resolveImageIndex()];
     this.img = this.imageCache[path];
   }
 
+  /**
+   * Ermittelt den Index des zu verwendenden Bildes basierend auf dem aktuellen Prozentwert.
+   * @returns {number} Der Index des Bildes im `IMAGES`-Array.
+   */
   resolveImageIndex() {
     if (this.percentage >= 100) {
       return 5;

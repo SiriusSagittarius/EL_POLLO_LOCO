@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für das Hilfe-Menü (Steuerungsinfos).
+ * @returns {string} Der HTML-String für das Hilfe-Menü.
+ */
 function renderHelpMenu() {
   return `
     <!-- Help Overlay -->

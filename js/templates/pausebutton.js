@@ -1,3 +1,7 @@
+/**
+ * Rendert die In-Game-Buttons (Pause, Vollbild, Info).
+ * @returns {string} Der HTML-String für die In-Game-Buttons.
+ */
 function renderPauseButton() {
   return `
     <!-- Pause & Fullscreen Buttons -->

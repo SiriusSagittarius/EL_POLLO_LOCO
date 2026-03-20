@@ -1,3 +1,7 @@
+/**
+ * Rendert das HTML für das Highscore-Menü.
+ * @returns {string} Der HTML-String für das Highscore-Menü.
+ */
 function renderHighscoreMenu() {
   return `
     <!-- Highscore Overlay -->

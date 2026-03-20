@@ -1,5 +1,6 @@
 /**
- * Repräsentiert eine werfbare Salsa-Flasche, die als Waffe genutzt werden kann.
+ * @class ThrowableBottle
+ * @description Repräsentiert eine werfbare Salsa-Flasche, die als Waffe genutzt werden kann.
  */
 class ThrowableBottle extends MovableObject {
   IMAGES_ROTATION = [
@@ -9,6 +10,11 @@ class ThrowableBottle extends MovableObject {
     "img/6_salsa_bottle/bottle_rotation/4_bottle_rotation.png",
   ];
 
+  /**
+   * @param {number} x - Die Start-X-Position der Flasche.
+   * @param {number} y - Die Start-Y-Position der Flasche.
+   * @param {boolean} direction - Die Wurfrichtung (true für links, false für rechts).
+   */
   constructor(x, y, direction) {
     super();
     this.loadImage(this.IMAGES_ROTATION[0]);
@@ -21,6 +27,10 @@ class ThrowableBottle extends MovableObject {
     this.throw();
   }
 
+  /**
+   * Wendet Gravitation auf die Flasche an, sodass sie in einer ballistischen Kurve fliegt.
+   * @returns {void}
+   */
   applyGravity() {
     this.setStoppableInterval(() => {
       this.y -= this.speedY;
@@ -30,6 +40,7 @@ class ThrowableBottle extends MovableObject {
 
   /**
    * Führt die Wurf-Aktion (inklusive Gravitation, Bewegung und Rotation) aus.
+   * @returns {void}
    */
   throw() {
     this.speedY = 20;

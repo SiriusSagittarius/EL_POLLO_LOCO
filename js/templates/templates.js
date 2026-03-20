@@ -1,3 +1,7 @@
+/**
+ * Rendert alle UI-Bildschirm-Templates zu einem einzigen HTML-String.
+ * @returns {string} Der zusammengefügte HTML-String aller Bildschirme.
+ */
 function renderAllScreens() {
   return (
     (typeof renderStartScreen === "function" ? renderStartScreen() : "") +
@@ -14,6 +18,10 @@ function renderAllScreens() {
   );
 }
 
+/**
+ * Rendert das HTML für den Ladebildschirm.
+ * @returns {string} Der HTML-String für den Ladebildschirm.
+ */
 function renderLoadingScreen() {
   return `
     <div id="loadingScreen" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: black; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;">

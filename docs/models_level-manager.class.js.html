@@ -27,10 +27,14 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Der LevelManager kontrolliert den Spielablauf, den Timer und das Spawnen
+ * @class LevelManager
+ * @description Kontrolliert den Spielablauf, den Timer und das Spawnen
  * von Gegnern, Münzen, Flaschen sowie das kontinuierliche Generieren des Hintergrunds.
  */
 class LevelManager {
+  /**
+   * @param {World} world - Eine Referenz auf die Haupt-Spielwelt.
+   */
   constructor(world) {
     this.world = world;
     this.level = 1;
@@ -41,14 +45,12 @@ class LevelManager {
     this.spawnIntervalId = null;
     this.timerIntervalId = null;
 
-    // Hintergrund-State
-    this.lastBackgroundX = -1522;
     this.bgWidth = 1522;
-    this.lastCloudX = -500;
   }
 
   /**
    * Startet den Level-Timer und den Intervall zum Spawnen von Hühnern.
+   * @returns {void}
    */
   startLevelLogic() {
     this.levelTimer = 0;
@@ -66,7 +68,6 @@ class LevelManager {
 
       for (let i = 0; i &lt; count; i++) {
         let offset = 600 + Math.random() * 600;
-        // Zugriff auf world.character
         let spawnX =
           this.world.character.x + (Math.random() &lt; 0.5 ? offset : -offset);
         let enemy;
@@ -80,7 +81,6 @@ class LevelManager {
         this.world.enemies.push(enemy);
       }
 
-      // Cleanup
       this.world.enemies = this.world.enemies.filter((e) => {
         const keep = Math.abs(e.x - this.world.character.x) &lt; 2000;
         if (!keep) e.stopIntervals();
@@ -92,6 +92,7 @@ class LevelManager {
   /**
    * Prüft, ob die Level-Zeit abgelaufen ist und triggert ggf. das
    * Erscheinen des Endbosses.
+   * @returns {void}
    */
   checkBossSpawn() {
     if (this.endlessMode) return;
@@ -112,6 +113,7 @@ class LevelManager {
 
   /**
    * Verteilt zufällig Münzen in der Welt.
+   * @returns {void}
    */
   spawnCoins() {
     for (let i = 0; i &lt; 20; i++) {
@@ -123,6 +125,7 @@ class LevelManager {
 
   /**
    * Verteilt zufällig Salsa-Flaschen in der Welt.
+   * @returns {void}
    */
   spawnSalsaBottles() {
     for (let i = 0; i &lt; 10; i++) {
@@ -132,97 +135,118 @@ class LevelManager {
 
   /**
    * Generiert dynamisch lückenlose Hintergrund-Ebenen (Himmel, Berge, Boden, Pflanzen)
-   * passend zur Fortbewegung des Spielers.
+   * passend zur Fortbewegung des Spielers (Infinite Scrolling).
+   * @returns {void}
    */
   updateBackground() {
     if (!this.world.character) return;
 
-    while (this.lastBackgroundX &lt; this.world.character.x + 2000) {
-      this.lastBackgroundX += this.bgWidth;
-      let x = this.lastBackgroundX;
-      let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
-      let imageNames = ["1.png", "2.png"];
-      let imageName = imageNames[relativeIndex];
+    const windowCenter = this.world.character.x - 500;
 
-      let air = new BackgroundObject(
-        `img/5_background/layers/5_air/${imageName}`,
-        x,
-        0,
+    let minX = windowCenter - 2000;
+    let maxX = windowCenter + 2000;
+    let startChunk = Math.floor(minX / this.bgWidth);
+    let endChunk = Math.floor(maxX / this.bgWidth);
+
+    for (let i = startChunk; i &lt;= endChunk; i++) {
+      let chunkX = i * this.bgWidth;
+
+      let exists = this.world.backgroundObjects.some(
+        (bgo) => bgo.x === chunkX &amp;&amp; bgo.parallaxFactor === 1 &amp;&amp; bgo.y >= 380,
       );
-      air.width = this.bgWidth;
-      this.world.backgroundObjects.push(air);
 
-      // Berge anpassen (durchgehend lückenlos im Wechsel)
-      let mountain = new BackgroundObject(
-        `img/5_background/layers/2_berge/${imageName}`,
-        x,
-        0.2,
-      );
-      mountain.width = this.bgWidth;
-      this.world.backgroundObjects.push(mountain);
-
-      let ground = new BackgroundObject(
-        `img/5_background/layers/1_boden/${imageName}`,
-        x,
-        1,
-      );
-      ground.width = this.bgWidth; // Erzwingt die korrekte Breite für lückenlosen Anschluss
-      ground.y += 380; // Bild um 50% (240 Pixel) nach unten geschoben
-      this.world.backgroundObjects.push(ground);
-
-      let imageblume = [
-        "1.png",
-        "2.png",
-        "3.png",
-        "4.png",
-        "5.png",
-        "6.png",
-        "7.png",
-      ];
-      let cactusCount = 4 + Math.floor(Math.random() * 5); // Deutlich mehr Kakteen/Blumen generieren (4 bis 8 Stück pro Abschnitt)
-
-      for (let i = 0; i &lt; cactusCount; i++) {
-        let randomImage =
-          imageblume[Math.floor(Math.random() * imageblume.length)];
-        let cactus = new BackgroundObject(
-          `img/5_background/layers/3_blum/${randomImage}`,
-          x + Math.random() * (this.bgWidth - 100),
-          1,
-        );
-
-        // Deutlich mehr Größenvariationen (Höhe zwischen 60 und 240 Pixeln)
-        cactus.height = 60 + Math.random() * 180;
-        cactus.width = cactus.height * 1.2;
-        // Kakteen und Blumen vertikal versetzt aufstellen (Tiefenwirkung)
-        let randomBaseY = 380 + Math.random() * 80;
-        cactus.y = randomBaseY - cactus.height;
-        this.world.backgroundObjects.push(cactus);
+      if (!exists) {
+        this.spawnBackgroundChunk(chunkX);
       }
     }
 
     this.world.backgroundObjects = this.world.backgroundObjects.filter(
       (bgo) => {
-        const parallax =
-          bgo.parallaxFactor !== undefined ? bgo.parallaxFactor : 1;
-        const screenX = bgo.x + this.world.camera_x * parallax;
-        const keep = screenX + bgo.width > -200;
+        const keep = Math.abs(bgo.x - windowCenter) &lt; 4000;
         if (!keep) bgo.stopIntervals();
         return keep;
       },
     );
   }
 
+  /**
+   * Erzeugt einen kompletten Hintergrund-Block (Himmel, Berge, Boden, Kakteen) an einer bestimmten X-Koordinate.
+   * @param {number} x - Die X-Position des neuen Blocks.
+   * @returns {void}
+   */
+  spawnBackgroundChunk(x) {
+    let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
+    let imageNames = ["1.png", "2.png"];
+    let imageName = imageNames[relativeIndex];
+
+    let air = new BackgroundObject(
+      `img/5_background/layers/5_air/${imageName}`,
+      x,
+      0,
+    );
+    air.width = this.bgWidth;
+    this.world.backgroundObjects.push(air);
+
+    let mountain = new BackgroundObject(
+      `img/5_background/layers/2_berge/${imageName}`,
+      x,
+      0.2,
+    );
+    mountain.width = this.bgWidth;
+    this.world.backgroundObjects.push(mountain);
+
+    let ground = new BackgroundObject(
+      `img/5_background/layers/1_boden/${imageName}`,
+      x,
+      1,
+    );
+    ground.width = this.bgWidth;
+    ground.y += 380;
+    this.world.backgroundObjects.push(ground);
+
+    let imageblume = [
+      "1.png",
+      "2.png",
+      "3.png",
+      "4.png",
+      "5.png",
+      "6.png",
+      "7.png",
+    ];
+    let cactusCount = 2 + Math.floor(Math.random() * 3);
+
+    for (let i = 0; i &lt; cactusCount; i++) {
+      let randomImage =
+        imageblume[Math.floor(Math.random() * imageblume.length)];
+      let cactus = new BackgroundObject(
+        `img/5_background/layers/3_blum/${randomImage}`,
+        x + Math.random() * (this.bgWidth - 100),
+        1,
+      );
+
+      cactus.height = 60 + Math.random() * 180;
+      cactus.width = cactus.height * 1.2;
+      let randomBaseY = 380 + Math.random() * 80;
+      cactus.y = randomBaseY - cactus.height;
+      this.world.backgroundObjects.push(cactus);
+    }
+  }
+
+  /**
+   * Sorgt dafür, dass immer genügend Wolken am Himmel sind und entfernt weit entfernte Wolken.
+   * @returns {void}
+   */
   updateClouds() {
     if (!this.world.character) return;
-    while (this.lastCloudX &lt; this.world.character.x + 2000) {
-      this.lastCloudX += 500;
-      this.world.clouds.push(new Cloud(this.lastCloudX));
+    while (this.world.clouds.length &lt; 10) {
+      let spawnX =
+        this.world.character.x +
+        (Math.random() &lt; 0.5 ? -1500 : 1500) +
+        (Math.random() * 1000 - 500);
+      this.world.clouds.push(new Cloud(spawnX));
     }
     this.world.clouds = this.world.clouds.filter((cloud) => {
-      const parallax =
-        cloud.parallaxFactor !== undefined ? cloud.parallaxFactor : 1;
-      const screenX = cloud.x + this.world.camera_x * parallax;
-      const keep = screenX + cloud.width > -200;
+      const keep = Math.abs(cloud.x - this.world.character.x) &lt; 4000;
       if (!keep) cloud.stopIntervals();
       return keep;
     });
@@ -230,6 +254,7 @@ class LevelManager {
 
   /**
    * Stoppt die Timer und Spawn-Intervalle des Level-Managers.
+   * @returns {void}
    */
   stop() {
     clearInterval(this.spawnIntervalId);
@@ -246,13 +271,13 @@ class LevelManager {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Character.html">Character</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeHighscore">closeHighscore</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#getHighscores">getHighscores</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndRestart">playOutroVideoAndRestart</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#saveHighscore">saveHighscore</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showHighscore">showHighscore</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Mar 16 2026 13:28:09 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

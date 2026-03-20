@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/gatling-bullet.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/gatling-bullet.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @class GatlingBullet
+ * @description Repräsentiert ein schnelles Projektil, wie von einer Gatling-Gun oder Uzi.
+ * @extends MovableObject
+ */
+class GatlingBullet extends MovableObject {
+  width = 15;
+  height = 10;
+  speedX = 0;
+  speedY = 0;
+  target = null;
+  world = null;
+  isSpinning = false;
+
+  /**
+   * @param {number} x - Die Start-X-Position des Projektils.
+   * @param {number} y - Die Start-Y-Position des Projektils.
+   * @param {boolean} direction - Die Schussrichtung (true für links, false für rechts).
+   * @param {number} [yOffset=0] - Ein vertikaler Versatz zur Startposition.
+   * @param {MovableObject|null} [target=null] - Ein optionales Ziel für zielsuchende Projektile.
+   * @param {World|null} [world=null] - Eine Referenz zur Spielwelt für Effekte.
+   * @param {HTMLImageElement|null} [customImage=null] - Ein optionales, benutzerdefiniertes Bild für das Projektil.
+   */
+  constructor(
+    x,
+    y,
+    direction,
+    yOffset = 0,
+    target = null,
+    world = null,
+    customImage = null,
+  ) {
+    super();
+    if (customImage) {
+      this.img = customImage;
+    } else {
+      this.loadImage("img/2_character_pepe/6_shooting/gatling_bullet.png");
+    }
+
+    this.x = x;
+    this.y = y + yOffset;
+    this.target = target;
+    this.world = world;
+
+    let bulletSpeed = 50;
+
+    if (target) {
+      let targetX = target.x + target.width / 2;
+      let targetY = target.y + target.height / 2;
+      let dx = targetX - this.x;
+      let dy = targetY - this.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+
+      this.speedX = (dx / distance) * bulletSpeed;
+      this.speedY = (dy / distance) * bulletSpeed;
+      this.otherDirection = this.speedX &lt; 0;
+    } else {
+      this.speedX = direction ? -bulletSpeed : bulletSpeed;
+      this.speedY = 0;
+      this.otherDirection = direction;
+    }
+
+    this.shoot();
+  }
+
+  /**
+   * Startet die Bewegungs- und optional die Rotationslogik des Projektils.
+   * @returns {void}
+   */
+  shoot() {
+    this.setStoppableInterval(() => {
+      if (this.target &amp;&amp; !this.target.isDead()) {
+        let bulletSpeed = 50;
+        let targetX = this.target.x + this.target.width / 2;
+        let targetY = this.target.y + this.target.height / 2;
+        let dx = targetX - this.x;
+        let dy = targetY - this.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 0) {
+          this.speedX = (dx / distance) * bulletSpeed;
+          this.speedY = (dy / distance) * bulletSpeed;
+          this.otherDirection = this.speedX &lt; 0;
+        }
+      }
+
+      this.x += this.speedX;
+      this.y += this.speedY;
+
+      if (this.isSpinning) {
+        this.angle += this.speedX > 0 ? 0.3 : -0.3;
+      }
+
+      if (this.world) {
+        this.world.particles.push(
+          new Particle(
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            "rgba(255, 100, 0, 0.5)",
+          ),
+        );
+      }
+    }, 1000 / 60);
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

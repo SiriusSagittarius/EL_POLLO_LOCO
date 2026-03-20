@@ -1,3 +1,7 @@
+/**
+ * Rendert die HTML-Elemente für die Touch-Steuerung auf mobilen Geräten.
+ * @returns {string} Der HTML-String für die Touch-Steuerung.
+ */
 function renderTouchControls() {
   return `
     <div id="touch-controls">

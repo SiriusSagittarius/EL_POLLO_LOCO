@@ -1,3 +1,8 @@
+/**
+ * @class SmallChicken
+ * @description Repräsentiert einen kleinen, schnellen Hühner-Gegner.
+ * @extends MovableObject
+ */
 class SmallChicken extends MovableObject {
   y = 380;
   height = 50;
@@ -10,6 +15,10 @@ class SmallChicken extends MovableObject {
     "img/3_enemies_chicken/chicken_small/1_walk/3_w.png",
   ];
 
+  /**
+   * Erzeugt eine Instanz eines kleinen Huhns.
+   * @param {number} [x] - Optionale Start-X-Position. Wenn nicht angegeben, wird eine zufällige Position gewählt.
+   */
   constructor(x) {
     super();
     this.loadImage("img/3_enemies_chicken/chicken_small/1_walk/1_w.png");
@@ -24,6 +33,10 @@ class SmallChicken extends MovableObject {
     this.animate();
   }
 
+  /**
+   * Startet die Bewegungs- und Animationslogik für das kleine Huhn.
+   * @returns {void}
+   */
   animate() {
     this.setStoppableInterval(() => {
       if (
