@@ -11,7 +11,7 @@ class LevelManager {
     this.world = world;
     this.level = 1;
     this.levelTimer = 0;
-    this.maxLevelTime = 120;
+    this.maxLevelTime = 60;
     this.endlessMode = false;
     this.bossSpawned = false;
     this.spawnIntervalId = null;

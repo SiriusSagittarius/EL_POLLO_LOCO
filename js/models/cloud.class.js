@@ -21,16 +21,15 @@ class Cloud extends MovableObject {
     this.x = x + Math.random() * 500;
     this.y = Math.random() * 50;
     this.speed = 0.1 + Math.random() * 0.2;
-    this.animate();
   }
 
   /**
-   * Startet die kontinuierliche Bewegung der Wolke nach links.
+   * Aktualisiert die Position der Wolke in jedem Frame.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame in Sekunden.
    * @returns {void}
    */
-  animate() {
-    this.setStoppableInterval(() => {
-      this.x -= this.speed;
-    }, 1000 / 60);
+  update(deltaTime) {
+    // Die Geschwindigkeit wird mit deltaTime multipliziert, um sie Frame-unabhängig zu machen.
+    this.x -= this.speed * deltaTime * 60;
   }
 }

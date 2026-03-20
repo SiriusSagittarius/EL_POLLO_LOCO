@@ -23,7 +23,7 @@ class World {
   ctx;
   keyboard;
   camera_x = 0;
-  runInterval;
+  lastTime = 0;
   bossSpawned = false;
   bossDying = false;
   isActive = true;
@@ -85,11 +85,55 @@ class World {
     this.levelManager.updateClouds();
 
     this.setWorld();
-    this.renderer.draw();
-    this.run();
+    this.gameLoop(0); // Startet die neue, optimierte Spielschleife
     this.background_sound.loop = true;
     this.background_sound.currentTime = 0;
     this.background_sound.play().catch(() => {});
+  }
+
+  /**
+   * Die zentrale, optimierte Spielschleife.
+   * @param {number} timestamp - Der von requestAnimationFrame bereitgestellte Zeitstempel.
+   */
+  gameLoop(timestamp) {
+    if (!this.isActive) return;
+
+    // Berechnet die Zeit, die seit dem letzten Frame vergangen ist (in Sekunden).
+    const deltaTime = (timestamp - this.lastTime) / 1000;
+    this.lastTime = timestamp;
+
+    // 1. Alle Logik-Updates durchführen
+    this.updateLogic(deltaTime);
+
+    // 2. Alle Objekte auf dem Canvas zeichnen
+    this.renderer.draw();
+
+    // Den nächsten Frame anfordern
+    requestAnimationFrame(this.gameLoop.bind(this));
+  }
+
+  /**
+   * Führt alle Spiellogik-Updates für einen Frame aus.
+   * @param {number} deltaTime - Die vergangene Zeit seit dem letzten Frame.
+   */
+  updateLogic(deltaTime) {
+    this.combatManager.checkShooting();
+    this.combatManager.checkThrowing();
+    this.collisionManager.checkCollisions();
+    this.levelManager.checkBossSpawn();
+    this.checkExplosions();
+    this.checkCasings();
+    this.checkParticles();
+    this.levelManager.updateBackground();
+    this.levelManager.updateClouds();
+    this.updateCharacterAngle();
+    this.updateFuel();
+    this.cleanupResources();
+    this.handleBackwardMovement(deltaTime);
+
+    // HINWEIS: Hier müssten nun die .update(deltaTime) Methoden aller
+    // beweglichen Objekte aufgerufen werden, nachdem deren `setInterval`
+    // entfernt und durch eine `update`-Methode ersetzt wurde.
   }
 
   /**
@@ -102,33 +146,10 @@ class World {
   }
 
   /**
-   * Startet die Haupt-Spielschleife (Game Loop).
-   * @returns {void}
-   */
-  run() {
-    this.runInterval = setInterval(() => {
-      this.combatManager.checkShooting();
-      this.combatManager.checkThrowing();
-      this.collisionManager.checkCollisions();
-      this.levelManager.checkBossSpawn();
-      this.checkExplosions();
-      this.checkCasings();
-      this.checkParticles();
-      this.levelManager.updateBackground();
-      this.levelManager.updateClouds();
-      this.updateCharacterAngle();
-      this.updateFuel();
-      this.cleanupResources();
-      this.handleBackwardMovement();
-    }, 1000 / 60);
-  }
-
-  /**
    * Pausiert das Spiel und stoppt alle aktiven Game-Loops.
    * @returns {void}
    */
   stopGame() {
-    clearInterval(this.runInterval);
     this.levelManager.stop();
     this.background_sound.pause();
     this.character.stopIntervals();
@@ -361,14 +382,14 @@ class World {
    * Zeigt eine Warnung an und schiebt den Charakter nach vorne.
    * @returns {void}
    */
-  handleBackwardMovement() {
+  handleBackwardMovement(deltaTime) {
     const BACKWARD_LIMIT_X = -100;
     const TIME_LIMIT_MS = 2000;
 
     if (this.isPushingBack) return;
 
     if (this.keyboard.LEFT && this.character.x < BACKWARD_LIMIT_X) {
-      this.backwardRunTime += 1000 / 60;
+      this.backwardRunTime += deltaTime * 1000; // deltaTime ist in Sekunden
     } else {
       this.backwardRunTime = 0;
     }

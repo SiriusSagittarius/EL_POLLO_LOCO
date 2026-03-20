@@ -138,19 +138,21 @@ class WorldRenderer {
     this.ctx.font = "28px sans-serif";
     this.ctx.fillText("x " + this.world.character.bottles, 75, 133);
 
-    this.ctx.font = "30px sans-serif";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      "Level: " +
-        this.world.levelManager.level +
-        " | Zeit: " +
-        (this.world.levelManager.maxLevelTime -
-          this.world.levelManager.levelTimer) +
-        "s",
-      360,
-      50,
-    );
-    this.ctx.textAlign = "start";
+    if (!this.world.levelManager.bossSpawned) {
+      this.ctx.font = "30px sans-serif";
+      this.ctx.textAlign = "center";
+      this.ctx.fillText(
+        "Level: " +
+          this.world.levelManager.level +
+          " | Zeit: " +
+          (this.world.levelManager.maxLevelTime -
+            this.world.levelManager.levelTimer) +
+          "s",
+        360,
+        50,
+      );
+      this.ctx.textAlign = "start";
+    }
 
     if (this.world.levelManager.bossSpawned) {
       this.addToMap(this.world.endbossBar);
@@ -171,11 +173,6 @@ class WorldRenderer {
     }
 
     this.world.camera_x = -this.world.character.x + 100;
-
-    let self = this;
-    requestAnimationFrame(function () {
-      self.draw();
-    });
   }
 
   /**

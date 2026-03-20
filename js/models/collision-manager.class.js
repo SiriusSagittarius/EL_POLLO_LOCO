@@ -158,7 +158,8 @@ class CollisionManager {
         this.world.character.jump();
       } else if (
         !this.world.character.isFlying &&
-        !this.world.character.isHurt()
+        !this.world.character.isHurt() &&
+        !this.world.character.isAboveGround() 
       ) {
         this.world.character.hit();
         this.world.statusBar.setPercentage(this.world.character.energy);
