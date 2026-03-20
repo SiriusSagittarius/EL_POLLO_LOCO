@@ -84,11 +84,29 @@ class WorldRenderer {
    */
   drawUI() {
     this.addToMap(this.world.statusBar);
+    this.drawHealthBarPercentage();
     this.addToMap(this.world.coinBar);
     this.drawScoreAndBottles();
     this.drawLevelInfo();
     if (this.world.isShowingWrongWay) this.drawWrongWayMessage();
     this.drawIngameTip();
+  }
+
+  /**
+   * Zeichnet den prozentualen Lebenswert auf die Lebensleiste.
+   */
+  drawHealthBarPercentage() {
+    const healthPercentage = Math.round(this.world.character.energy);
+    const text = `${healthPercentage}%`;
+
+    this.ctx.font = "20px sans-serif";
+    this.ctx.fillStyle = "black";
+    this.ctx.textAlign = "center";
+
+    const bar = this.world.statusBar;
+    this.ctx.fillText(text, bar.x + bar.width / 2, bar.y + bar.height / 2 + 17);
+
+    this.ctx.textAlign = "start";
   }
 
   /**
@@ -112,26 +130,23 @@ class WorldRenderer {
 
     this.ctx.save();
 
-   
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-    const boxWidth = 600;
-    const boxHeight = 80;
+    const boxWidth = 800;
+    const boxHeight = 100;
     const boxX = (this.canvas.width - boxWidth) / 2;
     const boxY = this.canvas.height - boxHeight - 20;
     this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
-    
     this.ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
     this.ctx.lineWidth = 1;
     this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
-   
     this.ctx.fillStyle = "white";
     this.ctx.font = "bold 16px sans-serif";
     this.ctx.textAlign = "center";
-    this.ctx.fillText(tipText1, this.canvas.width / 2, boxY + 35);
+    this.ctx.fillText(tipText1, this.canvas.width / 2, boxY + 40);
     this.ctx.font = "16px sans-serif";
-    this.ctx.fillText(tipText2, this.canvas.width / 2, boxY + 60);
+    this.ctx.fillText(tipText2, this.canvas.width / 2, boxY + 70);
 
     this.ctx.restore();
   }

@@ -7,7 +7,7 @@ class Endboss extends MovableObject {
   height = 400;
   width = 250;
   y = 55;
-  speed = 2.5;
+  speed = 150;
 
   IMAGES_ALERT = [
     "img/4_enemie_boss_chicken/2_alert/G5.png",
@@ -56,44 +56,47 @@ class Endboss extends MovableObject {
     this.loadImage(this.IMAGES_ALERT[0]);
     this.x = 2500;
     this.energy = 100;
-    this.animate();
   }
 
   /**
-   * Startet die Animations- und Bewegungsintervalle des Endbosses.
-   * @returns {void}
+   * Main update loop for the Endboss.
+   * @param {number} deltaTime - Time since last frame.
    */
-  animate() {
-    this.setStoppableInterval(() => {
-      if (
-        this.world &&
-        this.world.character &&
-        !this.isHurt() &&
-        !this.isDead()
-      ) {
-        this.moveTowardsPepe();
-      }
-    }, 1000 / 60);
+  update(deltaTime) {
+    this.updateMovement(deltaTime);
+    this.updateAnimation(deltaTime);
+  }
 
-    this.setStoppableInterval(() => {
-      if (this.isDead()) {
-        this.playAnimation(this.IMAGES_DEAD);
-        if (!this.playedDeathSound) {
-          this.dead_sound.play().catch(() => {});
-          this.playedDeathSound = true;
-        }
-      } else if (this.isHurt()) {
-        this.playAnimation(this.IMAGES_HURT);
-      } else if (this.world && this.world.character && this.isPlayerClose()) {
-        this.playAnimation(this.IMAGES_ATTACK);
+  updateMovement(deltaTime) {
+    if (
+      this.world &&
+      this.world.character &&
+      !this.isHurt() &&
+      !this.isDead()
+    ) {
+      this.moveTowardsPepe(deltaTime);
+    }
+  }
 
-        if (this.attack_sound.paused) {
-          this.attack_sound.play().catch(() => {});
-        }
-      } else {
-        this.playAnimation(this.IMAGES_ALERT);
+  updateAnimation(deltaTime) {
+    this.animationTimer += deltaTime;
+    if (this.animationTimer < 0.2) return; // 5fps
+    this.animationTimer = 0;
+
+    if (this.isDead()) {
+      this.playAnimation(this.IMAGES_DEAD);
+      if (!this.playedDeathSound) {
+        this.dead_sound.play().catch(() => {});
+        this.playedDeathSound = true;
       }
-    }, 200);
+    } else if (this.isHurt()) {
+      this.playAnimation(this.IMAGES_HURT);
+    } else if (this.world && this.world.character && this.isPlayerClose()) {
+      this.playAnimation(this.IMAGES_ATTACK);
+      if (this.attack_sound.paused) this.attack_sound.play().catch(() => {});
+    } else {
+      this.playAnimation(this.IMAGES_ALERT);
+    }
   }
 
   /**
@@ -110,13 +113,21 @@ class Endboss extends MovableObject {
    * Bewegt den Endboss in Richtung des Spielers.
    * @returns {void}
    */
-  moveTowardsPepe() {
-    if (this.x > this.world.character.x) {
-      this.x -= this.speed;
-      this.otherDirection = false;
+  moveTowardsPepe(deltaTime) {
+    const characterX = this.world.character.x;
+    const deadzone = 5; // Prevents flickering when boss is on top of player
+
+    if (this.x > characterX + deadzone) {
+      // Boss is to the right of player, move left and face left.
+      this.x -= this.speed * deltaTime;
+      this.otherDirection = false; // Base image faces left, so don't flip.
+    } else if (this.x < characterX - deadzone) {
+      // Boss is to the left of player, move right and face right.
+      this.x += this.speed * deltaTime;
+      this.otherDirection = true; // Flip the image to face right.
     } else {
-      this.x += this.speed;
-      this.otherDirection = true;
+      // Boss is in the deadzone, just face the player
+      this.otherDirection = this.x < characterX;
     }
   }
 

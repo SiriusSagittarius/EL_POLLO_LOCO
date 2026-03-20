@@ -301,8 +301,9 @@ class CombatManager {
         null,
         this.world,
       );
-      bullet.speedX = Math.cos(angle) * 30;
-      bullet.speedY = Math.sin(angle) * 30;
+      const wheelAttackSpeed = 1500; // pixels per second
+      bullet.speedX = Math.cos(angle) * wheelAttackSpeed;
+      bullet.speedY = Math.sin(angle) * wheelAttackSpeed;
       if (bullet.speedX < 0) {
         bullet.otherDirection = true;
       }

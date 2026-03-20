@@ -153,9 +153,8 @@ class MovableObject {
     this.energy -= damage;
     if (this.energy < 0) {
       this.energy = 0;
-    } else {
-      this.lastHit = new Date().getTime();
     }
+    this.lastHit = new Date().getTime();
   }
 
   /**
@@ -173,7 +172,7 @@ class MovableObject {
    * @returns {boolean} True, wenn die Energie 0 ist.
    */
   isDead() {
-    return this.energy == 0;
+    return this.energy <= 0;
   }
 
   /**
