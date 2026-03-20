@@ -14,7 +14,7 @@ class MovableObject {
   energy = 100;
   lastHit = 0;
   speedY = 0;
-  acceleration = 2.5;
+  acceleration = 1500; // pixels/second^2
   angle = 0;
   offset = {
     top: 0,
@@ -23,6 +23,8 @@ class MovableObject {
     bottom: 0,
   };
   intervalIds = [];
+  animationTimer = 0;
+  gravityEnabled = false;
 
   /**
    * Erzeugt eine Instanz eines beweglichen Objekts.
@@ -78,19 +80,27 @@ class MovableObject {
   }
 
   /**
-   * Wendet Gravitation auf das Objekt an, sodass es nach unten fällt.
-   * @returns {void}
+   * The main update function, to be called every frame from the world loop.
+   * @param {number} deltaTime - The time since the last frame in seconds.
    */
-  applyGravity() {
-    this.setStoppableInterval(() => {
-      if ((this.isAboveGround() || this.speedY > 0) && !this.isFlying) {
-        this.y -= this.speedY;
-        this.speedY -= this.acceleration;
-      } else if (!this.isFlying && this.y >= 150) {
-        this.y = 150;
-        this.speedY = 0;
-      }
-    }, 1000 / 25);
+  update(deltaTime) {
+    if (this.gravityEnabled) {
+      this.updateGravity(deltaTime);
+    }
+  }
+
+  /**
+   * Updates the object's vertical position based on gravity.
+   * @param {number} deltaTime - The time since the last frame in seconds.
+   */
+  updateGravity(deltaTime) {
+    if ((this.isAboveGround() || this.speedY > 0) && !this.isFlying) {
+      this.y -= this.speedY * deltaTime;
+      this.speedY -= this.acceleration * deltaTime;
+    } else if (!this.isFlying && this.y > 150) {
+      this.y = 150;
+      this.speedY = 0;
+    }
   }
 
   /**

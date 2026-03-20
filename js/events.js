@@ -1,19 +1,29 @@
 function isMobile() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  );
 }
 
 function bindTouchEvents() {
   const bindBtn = (id, key) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      keyboard[key] = true;
-    }, { passive: false });
-    btn.addEventListener("touchend", (e) => {
-      e.preventDefault();
-      keyboard[key] = false;
-    }, { passive: false });
+    btn.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        keyboard[key] = true;
+      },
+      { passive: false },
+    );
+    btn.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        keyboard[key] = false;
+      },
+      { passive: false },
+    );
   };
 
   bindBtn("btnLeft", "LEFT");
@@ -25,41 +35,28 @@ function bindTouchEvents() {
   const bindAction = (id, action) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      action();
-    }, { passive: false });
+    btn.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        action();
+      },
+      { passive: false },
+    );
   };
 
-  bindAction("btnUzi", () => {
+  bindAction("btnCycleWeapon", () => {
     if (world && world.character) {
-      world.character.currentWeapon = "uzi";
-      if (world.character.isFlying) world.character.toggleFlying();
-    }
-  });
-  bindAction("btnShotgun", () => {
-    if (world && world.character) {
-      world.character.currentWeapon = "shotgun";
-      if (world.character.isFlying) world.character.toggleFlying();
-    }
-  });
-  bindAction("btnBroom", () => {
-    if (world && world.character) {
-      if (world.character.isFlying) {
-        world.character.toggleFlying();
-        world.character.currentWeapon = "uzi";
-      } else if (world.coinBar.percentage > 0) {
-        world.character.currentWeapon = "broom";
-        world.character.toggleFlying();
-      }
+      world.character.cycleWeapon();
     }
   });
   bindAction("btnSpecial", () => {
     if (world && world.character) {
       if (world.character.isFlying) {
-        world.character.triggerWheelAnimation(100);
+        
+        world.character.triggerWheelAnimation(-1);
       } else if (world.character.currentWeapon === "uzi") {
-        world.combatManager.triggerUziWheelAttack(100);
+        world.combatManager.triggerUziWheelAttack(-1);
       }
     }
   });
@@ -134,14 +131,18 @@ window.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-window.addEventListener("wheel", (e) => {
-  if (world && world.character) {
-    if (world.character.isFlying) {
-      e.preventDefault();
-      world.character.triggerWheelAnimation(e.deltaY);
-    } else if (world.character.currentWeapon === "uzi") {
-      e.preventDefault();
-      world.combatManager.triggerUziWheelAttack(e.deltaY);
+window.addEventListener(
+  "wheel",
+  (e) => {
+    if (world && world.character) {
+      if (world.character.isFlying) {
+        e.preventDefault();
+        world.character.triggerWheelAnimation(e.deltaY);
+      } else if (world.character.currentWeapon === "uzi") {
+        e.preventDefault();
+        world.combatManager.triggerUziWheelAttack(e.deltaY);
+      }
     }
-  }
-}, { passive: false });
+  },
+  { passive: false },
+);

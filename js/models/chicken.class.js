@@ -29,32 +29,36 @@ class Chicken extends MovableObject {
     } else {
       this.x = 400 + Math.random() * 2000;
     }
-    this.speed = 0.15 + Math.random() * 0.5;
-
-    this.animate();
+    this.speed = 15 + Math.random() * 30; // pixels per second
   }
 
   /**
-   * Startet die Bewegungs- und Animationslogik für das Huhn.
-   * @returns {void}
+   * Main update loop for the chicken.
+   * @param {number} deltaTime - Time since last frame.
    */
-  animate() {
-    this.setStoppableInterval(() => {
-      if (this.world && this.world.character) {
-        if (this.x > this.world.character.x + 20) {
-          this.x -= this.speed;
-          this.otherDirection = false;
-        } else if (this.x < this.world.character.x - 20) {
-          this.x += this.speed;
-          this.otherDirection = true;
-        }
-      } else {
-        this.x -= this.speed;
-      }
-    }, 1000 / 60);
+  update(deltaTime) {
+    this.updateMovement(deltaTime);
+    this.updateAnimation(deltaTime);
+  }
 
-    this.setStoppableInterval(() => {
+  updateMovement(deltaTime) {
+    if (this.world && this.world.character) {
+      if (this.x > this.world.character.x + 20) {
+        this.x -= this.speed * deltaTime;
+        this.otherDirection = false;
+      } else if (this.x < this.world.character.x - 20) {
+        this.x += this.speed * deltaTime;
+        this.otherDirection = true;
+      }
+    }
+  }
+
+  updateAnimation(deltaTime) {
+    this.animationTimer += deltaTime;
+    if (this.animationTimer > 0.2) {
+      // 5fps
       this.playAnimation(this.IMAGES_WALKING);
-    }, 200);
+      this.animationTimer = 0;
+    }
   }
 }

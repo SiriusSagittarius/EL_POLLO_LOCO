@@ -126,49 +126,69 @@ class CollisionManager {
    * @returns {void}
    */
   checkCharacterEnemyCollisions() {
-    for (let i = this.world.enemies.length - 1; i >= 0; i--) {
-      const enemy = this.world.enemies[i];
-
-      if (!this.world.character.isColliding(enemy)) continue;
-
-      if (
-        this.world.character.isFlying &&
-        !this.world.character.impaledChicken &&
-        (enemy instanceof Chicken || enemy instanceof SmallChicken)
-      ) {
-        this.world.character.impaledChicken = true;
-        this.world.character.shotsWithChicken = 0;
-        enemy.energy = 0;
-        enemy.toDelete = true;
-        enemy.stopIntervals();
-        this.world.enemies.splice(i, 1);
-      } else if (
-        !this.world.character.isFlying &&
-        this.world.character.speedY < 0 &&
-        this.world.character.y +
-          this.world.character.height -
-          this.world.character.offset.bottom <
-          enemy.y + enemy.height / 2 + 40
-      ) {
-        if (enemy instanceof Endboss) {
-          this.handleBossHit(enemy, 10);
-        } else if (enemy instanceof Chicken || enemy instanceof SmallChicken) {
-          this.handleEnemyHit(enemy, i);
-        }
-        this.world.character.jump();
-      } else if (
-        !this.world.character.isFlying &&
-        !this.world.character.isHurt() &&
-        !this.world.character.isAboveGround() 
-      ) {
-        this.world.character.hit();
-        this.world.statusBar.setPercentage(this.world.character.energy);
+    this.world.enemies.forEach((enemy, i) => {
+      if (this.world.character.isColliding(enemy)) {
+        this.evaluateCharacterCollision(enemy, i);
       }
-    }
+    });
 
     if (this.world.character.isDead()) {
       this.world.gameOver();
     }
+  }
+
+  evaluateCharacterCollision(enemy, i) {
+    if (this.isImpaling(enemy)) {
+      this.handleImpale(enemy, i);
+    } else if (this.isStomping(enemy)) {
+      this.handleStomp(enemy, i);
+    } else if (this.canTakeDamage()) {
+      this.handleDamage();
+    }
+  }
+
+  isImpaling(enemy) {
+    const char = this.world.character;
+    return (
+      char.isFlying &&
+      !char.impaledChicken &&
+      (enemy instanceof Chicken || enemy instanceof SmallChicken)
+    );
+  }
+
+  handleImpale(enemy, i) {
+    this.world.character.impaledChicken = true;
+    this.world.character.shotsWithChicken = 0;
+    enemy.energy = 0;
+    enemy.stopIntervals();
+    this.world.enemies.splice(i, 1);
+  }
+
+  isStomping(enemy) {
+    const char = this.world.character;
+    const isFallingOnEnemy = char.speedY < 0 && !char.isFlying;
+    const isVerticallyAligned =
+      char.y + char.height - char.offset.bottom < enemy.y + enemy.height / 2;
+    return isFallingOnEnemy && isVerticallyAligned;
+  }
+
+  handleStomp(enemy, i) {
+    if (enemy instanceof Endboss) {
+      this.handleBossHit(enemy, 10);
+    } else {
+      this.handleEnemyHit(enemy, i);
+    }
+    this.world.character.jump();
+  }
+
+  canTakeDamage() {
+    const char = this.world.character;
+    return !char.isFlying && !char.isHurt() && !char.isAboveGround();
+  }
+
+  handleDamage() {
+    this.world.character.hit();
+    this.world.statusBar.setPercentage(this.world.character.energy);
   }
 
   /**
@@ -178,25 +198,33 @@ class CollisionManager {
   checkCollectibles() {
     this.collectItems(
       this.world.coins,
-      (item, i) => this.world.collectCoin(i),
+      (item, i) => this.collectCoin(i),
       false,
     );
     this.collectItems(
       this.world.salsaBottles,
-      () => this.world.character.bottles++,
+      () => this.collectBottle(),
       true,
     );
     this.collectItems(
       this.world.energyBalls,
-      () => {
-        this.world.character.energy = Math.min(
-          this.world.character.energy + 20,
-          100,
-        );
-        this.world.statusBar.setPercentage(this.world.character.energy);
-      },
+      () => this.collectEnergyBall(),
       true,
     );
+  }
+
+  collectCoin(index) {
+    this.world.collectCoin(index);
+  }
+
+  collectBottle() {
+    this.world.character.bottles++;
+  }
+
+  collectEnergyBall() {
+    const char = this.world.character;
+    char.energy = Math.min(char.energy + 20, 100);
+    this.world.statusBar.setPercentage(char.energy);
   }
 
   /**

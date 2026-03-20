@@ -125,16 +125,23 @@ function startGame() {
   }
 
   menu_sound.pause();
-  unlockAudio(background_sound);
   document.getElementById("startScreen").style.display = "none";
-
-  showStoryScreen();
+  startGameSequence();
 }
 
 /**
- * Pausiert das Spiel.
+ * Startet das Spiel neu, indem die Seite komplett neu geladen wird.
+ * Wird vom "Restart"-Button im Game-Over-Screen aufgerufen.
  */
 function restartGame() {
+  location.reload();
+}
+
+/**
+ * Initialisiert die Spiellogik, spielt das Intro und startet die World.
+ * Wird beim ersten Spielstart vom Menü aus aufgerufen.
+ */
+function startGameSequence() {
   if (world) {
     world.stopGame();
     world = null;
@@ -155,13 +162,33 @@ function restartGame() {
       document.getElementById("btnMenu").style.display = "flex";
       console.log("Spiel neu gestartet!");
       gamePaused = false;
+
+      setTimeout(() => {
+        if (world && world.isActive) {
+          world.showPepistolTip = true;
+          setTimeout(() => {
+            if (world) {
+              world.showPepistolTip = false;
+            }
+          }, 8000);
+        }
+      }, 2000);
     }
   });
 }
 
 /**
- * Pausiert das Spiel.
+ * Löscht den Speicher außer dem Highscore und lädt die Seite neu.
  */
+function finishGameAndReload() {
+  const highscore = localStorage.getItem("highscoreList");
+  localStorage.clear();
+  if (highscore) {
+    localStorage.setItem("highscoreList", highscore);
+  }
+  location.reload();
+}
+
 function pauseGame() {
   if (world) {
     gamePaused = true;

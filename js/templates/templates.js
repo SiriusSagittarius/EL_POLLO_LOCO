@@ -6,6 +6,7 @@ function renderAllScreens() {
   return (
     (typeof renderStartScreen === "function" ? renderStartScreen() : "") +
     (typeof renderGameOverScreen === "function" ? renderGameOverScreen() : "") +
+    (typeof renderFinishScreen === "function" ? renderFinishScreen() : "") +
     (typeof renderWinScreen === "function" ? renderWinScreen() : "") +
     (typeof renderPauseButton === "function" ? renderPauseButton() : "") +
     (typeof renderPauseMenu === "function" ? renderPauseMenu() : "") +

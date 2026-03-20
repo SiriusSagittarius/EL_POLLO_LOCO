@@ -34,8 +34,8 @@
 class Character extends MovableObject {
   height = 280;
   width = 250;
-  y = 80;
-  speed = 3;
+  y = 150;
+  speed = 200; // pixels per second
   otherDirection = false;
   isShooting = false;
   isFlying = false;
@@ -198,86 +198,116 @@ class Character extends MovableObject {
     this.loadImages(this.IMAGES_UZI_SHOTWALK);
     this.loadImages(this.IMAGES_UZI_WHEEL_UP);
     this.loadImages(this.IMAGES_UZI_WHEEL_DOWN);
-    this.applyGravity();
-    this.animate();
+    this.gravityEnabled = true;
   }
 
   /**
-   * Startet die kontinuierliche Abfrage von Bewegungen und das Abspielen der jeweiligen Animationen.
-   * @returns {void}
+   * Main update loop for the character.
+   * @param {number} deltaTime - Time since last frame.
    */
-  animate() {
-    setInterval(() => {
-      if (this.isFlying) {
-        if (this.world &amp;&amp; this.world.keyboard.SPACE) {
-          this.x += Math.cos(this.worldAngle) * this.speed * 2;
-          this.y += Math.sin(this.worldAngle) * this.speed * 2;
-        }
-      } else {
-        if (this.world &amp;&amp; this.world.keyboard.RIGHT) {
-          this.x += this.speed;
-          this.otherDirection = false;
-        }
-        if (this.world &amp;&amp; this.world.keyboard.LEFT) {
-          this.x -= this.speed;
-          this.otherDirection = true;
-        }
-        if (this.world &amp;&amp; this.world.keyboard.SPACE &amp;&amp; !this.isAboveGround()) {
-          this.jump();
-        }
-      }
-    }, 1000 / 60);
+  update(deltaTime) {
+    super.update(deltaTime); // Handles gravity
+    this.updateMovement(deltaTime);
+    this.updateAnimation(deltaTime);
+  }
 
-    setInterval(() => {
-      if (this.isDead()) {
-        this.playAnimation(this.IMAGES_DEAD);
-      } else if (this.isHurt()) {
-        this.playAnimation(this.IMAGES_HURT);
-      } else if (this.isFlying) {
-        if (this.isWheelUp) {
-          this.playAnimation(this.IMAGES_WHEEL_UP);
-        } else if (this.isWheelDown) {
-          this.playAnimation(this.IMAGES_WHEEL_DOWN);
-        } else if (this.isShooting) {
-          this.playAnimation(this.IMAGES_FLYING_FIRE);
-        } else if (this.world &amp;&amp; this.world.keyboard.SPACE) {
-          const verticalDirection = Math.sin(this.worldAngle);
-          if (verticalDirection &lt; -0.1) {
-            this.playAnimation(this.IMAGES_FLYING_UP);
-          } else if (verticalDirection > 0.1) {
-            this.playAnimation(this.IMAGES_FLYING_DOWN);
-          } else {
-            this.playAnimation(this.IMAGES_FLYING);
-          }
-        } else {
-          this.playAnimation(this.IMAGES_FLYING);
-        }
-      } else if (this.isAboveGround()) {
-        this.playAnimation(this.IMAGES_JUMPING);
-      } else if (this.isUziWheelUp) {
-        this.playAnimation(this.IMAGES_UZI_WHEEL_UP);
-      } else if (this.isUziWheelDown) {
-        this.playAnimation(this.IMAGES_UZI_WHEEL_DOWN);
-      } else if (this.isUziForward) {
-        if (
-          this.world &amp;&amp;
-          (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)
-        ) {
-          this.playAnimation(this.IMAGES_UZI_SHOTWALK);
-        } else {
-          this.playAnimation(this.IMAGES_UZI_SHOT);
-        }
-      } else if (this.isShooting) {
-        this.playAnimation(this.IMAGES_SHOOTING);
-      } else if (
-        this.world &amp;&amp;
-        (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)
-      ) {
-        this.playAnimation(this.IMAGES_WALKING);
-      } else {
-        this.playAnimation(this.IMAGES_IDLE);
-      }
-    }, 100);
+  /**
+   * Aktualisiert die Spielerbewegung basierend auf Tastatureingaben.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  updateMovement(deltaTime) {
+    if (this.isFlying) this.handleFlyingMovement(deltaTime);
+    else this.handleGroundMovement(deltaTime);
+  }
+
+  /**
+   * Behandelt die Bewegung am Boden und Sprünge.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  handleGroundMovement(deltaTime) {
+    if (this.world &amp;&amp; this.world.keyboard.RIGHT) {
+      this.x += this.speed * deltaTime;
+      this.otherDirection = false;
+    }
+    if (this.world &amp;&amp; this.world.keyboard.LEFT) {
+      this.x -= this.speed * deltaTime;
+      this.otherDirection = true;
+    }
+    if (this.world &amp;&amp; this.world.keyboard.SPACE &amp;&amp; !this.isAboveGround()) {
+      this.jump();
+    }
+  }
+
+  /**
+   * Behandelt die Bewegung in der Luft (Flugmodus).
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  handleFlyingMovement(deltaTime) {
+    if (this.world &amp;&amp; this.world.keyboard.SPACE) {
+      this.x += Math.cos(this.worldAngle) * this.speed * 2 * deltaTime;
+      this.y += Math.sin(this.worldAngle) * this.speed * 2 * deltaTime;
+    }
+  }
+
+  /**
+   * Wählt die passende Animation aus und spielt sie ab.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  updateAnimation(deltaTime) {
+    this.animationTimer += deltaTime;
+    if (this.animationTimer >= 0.1) {
+      // 10fps
+      const images = this.getAnimationImages();
+      this.playAnimation(images);
+      this.animationTimer = 0;
+    }
+  }
+
+  /**
+   * Ermittelt das passende Animations-Array basierend auf dem Charakterstatus.
+   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
+   */
+  getAnimationImages() {
+    if (this.isDead()) return this.IMAGES_DEAD;
+    if (this.isHurt()) return this.IMAGES_HURT;
+    if (this.isFlying) return this.getFlyingAnimationImages();
+    if (this.isAboveGround()) return this.IMAGES_JUMPING;
+    return this.getGroundAnimationImages();
+  }
+
+  /**
+   * Ermittelt die Animation für den Flugmodus.
+   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
+   */
+  getFlyingAnimationImages() {
+    if (this.isWheelUp) return this.IMAGES_WHEEL_UP;
+    if (this.isWheelDown) return this.IMAGES_WHEEL_DOWN;
+    if (this.isShooting) return this.IMAGES_FLYING_FIRE;
+    if (this.world &amp;&amp; this.world.keyboard.SPACE) {
+      const vDir = Math.sin(this.worldAngle);
+      if (vDir &lt; -0.1) return this.IMAGES_FLYING_UP;
+      if (vDir > 0.1) return this.IMAGES_FLYING_DOWN;
+    }
+    return this.IMAGES_FLYING;
+  }
+
+  /**
+   * Ermittelt die Animation für den Bodenkampf.
+   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
+   */
+  getGroundAnimationImages() {
+    if (this.isUziWheelUp) return this.IMAGES_UZI_WHEEL_UP;
+    if (this.isUziWheelDown) return this.IMAGES_UZI_WHEEL_DOWN;
+    if (this.isUziForward) {
+      const isMoving =
+        this.world &amp;&amp; (this.world.keyboard.RIGHT || this.world.keyboard.LEFT);
+      return isMoving ? this.IMAGES_UZI_SHOTWALK : this.IMAGES_UZI_SHOT;
+    }
+    if (this.isShooting) return this.IMAGES_SHOOTING;
+    if (this.world &amp;&amp; (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)) {
+      return this.IMAGES_WALKING;
+    }
+    return this.IMAGES_IDLE;
   }
 
   /**
@@ -285,7 +315,7 @@ class Character extends MovableObject {
    * @returns {void}
    */
   jump() {
-    this.speedY = 30;
+    this.speedY = 700; // pixels per second
     this.jump_sound.play().catch(() => {});
   }
 
@@ -393,6 +423,37 @@ class Character extends MovableObject {
   }
 
   /**
+   * Schaltet zwischen den primären Boden-Waffen (Uzi, Shotgun) um.
+   * @returns {void}
+   */
+  cycleWeapon() {
+    // Definiere die verfügbaren Waffen
+    const groundWeapons = ["uzi", "shotgun"];
+    const allWeapons = ["uzi", "shotgun", "broom"];
+
+    // Prüfe, ob der Besen Treibstoff hat
+    let availableWeapons = groundWeapons;
+    if (this.world &amp;&amp; this.world.coinBar.percentage > 0) {
+      availableWeapons = allWeapons;
+    }
+
+    let currentIndex = availableWeapons.indexOf(this.currentWeapon);
+    if (currentIndex === -1) {
+      currentIndex = 0; // Fallback, falls die aktuelle Waffe nicht verfügbar ist
+    }
+
+    let nextIndex = (currentIndex + 1) % availableWeapons.length;
+    this.currentWeapon = availableWeapons[nextIndex];
+
+    // Sorge dafür, dass der Flugstatus zur Waffe passt
+    if (this.currentWeapon === "broom" &amp;&amp; !this.isFlying) {
+      this.toggleFlying();
+    } else if (this.currentWeapon !== "broom" &amp;&amp; this.isFlying) {
+      this.toggleFlying();
+    }
+  }
+
+  /**
    * Führt einen schnellen Schuss mit der Uzi nach vorne aus.
    * @returns {void}
    */
@@ -416,13 +477,13 @@ class Character extends MovableObject {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 21:03:36 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

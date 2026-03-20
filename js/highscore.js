@@ -5,11 +5,15 @@ function checkEndGame(score, won) {
   hideCrosshair();
   let highscores = getHighscores();
 
-  let isNewHighscore = highscores.length < 5 || score > highscores[highscores.length - 1].score;
+  let isNewHighscore =
+    highscores.length < 5 || score > highscores[highscores.length - 1].score;
 
   if (isNewHighscore) {
     tempScore = score;
-    let name = currentPlayerName && currentPlayerName.trim() !== "" ? currentPlayerName : "Anonym";
+    let name =
+      currentPlayerName && currentPlayerName.trim() !== ""
+        ? currentPlayerName
+        : "Anonym";
     highscores.push({ name: name, score: score });
     highscores.sort((a, b) => b.score - a.score);
     highscores = highscores.slice(0, 5);
@@ -19,7 +23,7 @@ function checkEndGame(score, won) {
   document.getElementById("btnMenu").style.display = "none";
   if (won) {
     document.getElementById("winScreen").style.display = "flex";
-    setTimeout(() => playOutroVideoAndRestart(), 4000);
+    setTimeout(() => playOutroVideoAndShowFinish(), 3000);
   } else {
     let scoreElement = document.getElementById("gameOverScore");
     if (scoreElement) scoreElement.innerText = "Score: " + score;
@@ -27,7 +31,7 @@ function checkEndGame(score, won) {
   }
 }
 
-function saveHighscore() {} 
+function saveHighscore() {}
 
 function getHighscores() {
   let stored = localStorage.getItem("highscoreList");

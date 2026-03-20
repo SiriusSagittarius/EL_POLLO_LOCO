@@ -37,6 +37,7 @@ class World {
   isShowingWrongWay = false;
   isPushingBack = false;
   backwardRunTime = 0;
+  showPepistolTip = false;
 
   levelManager;
   collisionManager;
@@ -62,12 +63,20 @@ class World {
     this.canvas = canvas;
     this.keyboard = keyboard;
     this.character = new Character();
+    this.initComponents();
+    this.loadHighscore();
+    this.initLevel();
+    this.startGameLoop();
+  }
 
+  initComponents() {
     this.levelManager = new LevelManager(this);
     this.collisionManager = new CollisionManager(this);
     this.combatManager = new CombatManager(this);
-    this.renderer = new WorldRenderer(this, canvas);
+    this.renderer = new WorldRenderer(this, this.canvas);
+  }
 
+  loadHighscore() {
     try {
       let storedList = JSON.parse(localStorage.getItem("highscoreList"));
       if (storedList && Array.isArray(storedList) && storedList.length > 0) {
@@ -77,13 +86,17 @@ class World {
     } catch (e) {
       console.log("No highscores yet or format change.");
     }
+  }
 
+  initLevel() {
     this.levelManager.startLevelLogic();
     this.levelManager.spawnCoins();
     this.levelManager.spawnSalsaBottles();
     this.levelManager.updateBackground();
     this.levelManager.updateClouds();
+  }
 
+  startGameLoop() {
     this.setWorld();
     this.gameLoop(0); // Startet die neue, optimierte Spielschleife
     this.background_sound.loop = true;
@@ -117,13 +130,20 @@ class World {
    * @param {number} deltaTime - Die vergangene Zeit seit dem letzten Frame.
    */
   updateLogic(deltaTime) {
+    // Update all movable objects
+    this.character.update(deltaTime);
+    this.enemies.forEach((e) => e.update(deltaTime));
+    this.clouds.forEach((c) => c.update(deltaTime));
+    this.bullets.forEach((b) => b.update(deltaTime));
+    this.throwableObjects.forEach((t) => t.update(deltaTime));
+    this.particles.forEach((p) => p.update(deltaTime));
+    this.coins.forEach((c) => c.update(deltaTime));
+    this.explosions.forEach((e) => e.update(deltaTime));
+
     this.combatManager.checkShooting();
     this.combatManager.checkThrowing();
     this.collisionManager.checkCollisions();
     this.levelManager.checkBossSpawn();
-    this.checkExplosions();
-    this.checkCasings();
-    this.checkParticles();
     this.levelManager.updateBackground();
     this.levelManager.updateClouds();
     this.updateCharacterAngle();
@@ -131,9 +151,10 @@ class World {
     this.cleanupResources();
     this.handleBackwardMovement(deltaTime);
 
-    // HINWEIS: Hier müssten nun die .update(deltaTime) Methoden aller
-    // beweglichen Objekte aufgerufen werden, nachdem deren `setInterval`
-    // entfernt und durch eine `update`-Methode ersetzt wurde.
+    // Cleanup needs to happen after updates
+    this.checkExplosions();
+    this.checkCasings();
+    this.checkParticles();
   }
 
   /**
@@ -153,6 +174,15 @@ class World {
     this.levelManager.stop();
     this.background_sound.pause();
     this.character.stopIntervals();
+    this.character.broom_sound.pause();
+
+    // Stop all enemy sounds
+    this.enemies.forEach((enemy) => {
+      if (enemy instanceof Endboss) {
+        enemy.attack_sound.pause();
+        enemy.dead_sound.pause();
+      }
+    });
     this.isActive = false;
   }
 
@@ -162,20 +192,21 @@ class World {
    * Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.
    */
   updateFuel() {
-    if (this.character.isFlying) {
-      let currentFuel = this.coinBar.percentage;
-      currentFuel -= 0.0375;
-      if (currentFuel <= 0) {
-        currentFuel = 0;
-        if (this.character.isFlying) {
-          this.character.toggleFlying();
-        }
-        if (this.character.currentWeapon === "broom") {
-          this.character.currentWeapon = "uzi";
-        }
-      }
+    if (!this.character.isFlying) return;
+    let currentFuel = this.coinBar.percentage;
+    currentFuel -= 0.0375;
+    if (currentFuel <= 0) {
+      this.handleFuelDepletion();
+    } else {
       this.coinBar.setPercentage(currentFuel);
     }
+  }
+
+  handleFuelDepletion() {
+    this.coinBar.setPercentage(0);
+    if (this.character.isFlying) this.character.toggleFlying();
+    if (this.character.currentWeapon === "broom")
+      this.character.currentWeapon = "uzi";
   }
 
   /**
@@ -183,25 +214,36 @@ class World {
    * @returns {void}
    */
   updateCharacterAngle() {
-    if (this.character.isFlying) {
-      let worldMouseX = mousePosition.x - this.camera_x - this.shake_x;
-      let worldMouseY = mousePosition.y - this.shake_y;
+    if (!this.character.isFlying) return;
+    const worldMousePos = this.getWorldMousePosition();
+    const charCenter = this.getCharacterCenter();
+    const delta = {
+      x: worldMousePos.x - charCenter.x,
+      y: worldMousePos.y - charCenter.y,
+    };
+    this.character.worldAngle = Math.atan2(delta.y, delta.x);
+    this.character.otherDirection = delta.x < 0;
+    this.setRenderAngle(delta);
+  }
 
-      let charCenterX = this.character.x + this.character.width / 2;
-      let charCenterY = this.character.y + this.character.height / 2;
+  getWorldMousePosition() {
+    return {
+      x: mousePosition.x - this.camera_x - this.shake_x,
+      y: mousePosition.y - this.shake_y,
+    };
+  }
 
-      let dx = worldMouseX - charCenterX;
-      let dy = worldMouseY - charCenterY;
+  getCharacterCenter() {
+    return {
+      x: this.character.x + this.character.width / 2,
+      y: this.character.y + this.character.height / 2,
+    };
+  }
 
-      this.character.worldAngle = Math.atan2(dy, dx);
-      this.character.otherDirection = dx < 0;
-
-      if (this.character.otherDirection) {
-        this.character.angle = Math.atan2(dy, -dx);
-      } else {
-        this.character.angle = Math.atan2(dy, dx);
-      }
-    }
+  setRenderAngle(delta) {
+    if (this.character.otherDirection)
+      this.character.angle = Math.atan2(delta.y, -delta.x);
+    else this.character.angle = Math.atan2(delta.y, delta.x);
   }
 
   /**
@@ -237,23 +279,30 @@ class World {
     this.coins.splice(index, 1);
     this.score += 50;
     this.checkHighscore();
+    this.playCoinSound();
+    this.updateFuelOnCoinCollect();
+  }
 
+  playCoinSound() {
     let sound = this.coin_sound.cloneNode(true);
     sound.volume = this.volume;
     sound.play().catch(() => {});
+  }
 
+  updateFuelOnCoinCollect() {
     let newPercentage = this.coinBar.percentage + 20;
-
     if (newPercentage >= 100) {
       newPercentage = 100;
-      if (!this.character.isFlying) {
-        this.character.currentWeapon = "broom";
-        this.character.toggleFlying();
-      }
+      this.activateBroomIfPossible();
     }
-
     this.coinBar.setPercentage(newPercentage);
-    console.log("Münze gesammelt! Neuer Stand:", newPercentage);
+  }
+
+  activateBroomIfPossible() {
+    if (!this.character.isFlying) {
+      this.character.currentWeapon = "broom";
+      this.character.toggleFlying();
+    }
   }
 
   /**
@@ -262,30 +311,37 @@ class World {
    * @returns {void}
    */
   cleanupResources() {
-    let leftBoundary = this.character.x - 800;
+    const leftBoundary = this.character.x - 800;
+    this.coins = this.filterByBoundary(this.coins, leftBoundary);
+    this.salsaBottles = this.filterByBoundary(this.salsaBottles, leftBoundary);
+    this.enemies = this.filterEnemiesByBoundary(this.enemies, leftBoundary);
+    this.throwableObjects = this.filterThrowableObjects(
+      this.throwableObjects,
+      leftBoundary,
+    );
+  }
 
-    this.coins = this.coins.filter((c) => {
-      const keep = c.x > leftBoundary;
-      if (!keep) c.stopIntervals();
+  filterByBoundary(array, boundary) {
+    return array.filter((obj) => {
+      const keep = obj.x > boundary;
+      if (!keep) obj.stopIntervals();
       return keep;
     });
+  }
 
-    this.salsaBottles = this.salsaBottles.filter((s) => {
-      const keep = s.x > leftBoundary;
-      if (!keep) s.stopIntervals();
+  filterEnemiesByBoundary(array, boundary) {
+    return array.filter((enemy) => {
+      if (enemy instanceof Endboss) return true;
+      const keep = enemy.x > boundary;
+      if (!keep) enemy.stopIntervals();
       return keep;
     });
+  }
 
-    this.enemies = this.enemies.filter((e) => {
-      if (e instanceof Endboss) return true;
-      const keep = e.x > leftBoundary;
-      if (!keep) e.stopIntervals();
-      return keep;
-    });
-
-    this.throwableObjects = this.throwableObjects.filter((b) => {
-      const keep = b.x > leftBoundary && b.y < 600 && !b.toDelete;
-      if (!keep) b.stopIntervals();
+  filterThrowableObjects(array, boundary) {
+    return array.filter((obj) => {
+      const keep = obj.x > boundary && obj.y < 600 && !obj.toDelete;
+      if (!keep) obj.stopIntervals();
       return keep;
     });
   }
@@ -383,26 +439,29 @@ class World {
    * @returns {void}
    */
   handleBackwardMovement(deltaTime) {
-    const BACKWARD_LIMIT_X = -100;
-    const TIME_LIMIT_MS = 2000;
-
     if (this.isPushingBack) return;
+    this.updateBackwardRunTime(deltaTime);
+    if (this.backwardRunTime > 2000) {
+      this.triggerPushback();
+    }
+  }
 
+  updateBackwardRunTime(deltaTime) {
+    const BACKWARD_LIMIT_X = -100;
     if (this.keyboard.LEFT && this.character.x < BACKWARD_LIMIT_X) {
-      this.backwardRunTime += deltaTime * 1000; 
+      this.backwardRunTime += deltaTime * 1000;
     } else {
       this.backwardRunTime = 0;
     }
+  }
 
-    if (this.backwardRunTime > TIME_LIMIT_MS) {
-      this.isPushingBack = true;
-      this.isShowingWrongWay = true;
-
-      setTimeout(() => {
-        this.isShowingWrongWay = false;
-        this.isPushingBack = false;
-        this.character.x += 400;
-      }, 1500);
-    }
+  triggerPushback() {
+    this.isPushingBack = true;
+    this.isShowingWrongWay = true;
+    setTimeout(() => {
+      this.isShowingWrongWay = false;
+      this.isPushingBack = false;
+      this.character.x += 400;
+    }, 1500);
   }
 }

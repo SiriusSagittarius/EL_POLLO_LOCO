@@ -18,26 +18,28 @@ class CombatManager {
    */
   checkShooting() {
     if (!this.world.keyboard.D) return;
-
-    let currentTime = new Date().getTime();
-
-    if (
-      this.world.character.isFlying &&
-      currentTime - this.lastShootTime > 100
-    ) {
-      this.fireGatling(currentTime);
-    } else if (!this.world.character.isFlying) {
-      let isUzi = this.world.character.currentWeapon === "uzi";
-      let cooldown = isUzi ? 100 : 200;
-
-      if (currentTime - this.lastShootTime > cooldown) {
-        if (isUzi) {
-          this.fireUzi(currentTime);
-        } else if (this.world.character.shoot()) {
-          this.fireShotgun(currentTime);
-        }
-      }
+    const currentTime = new Date().getTime();
+    if (this.world.character.isFlying) {
+      this.handleFlyingShooting(currentTime);
+    } else {
+      this.handleGroundShooting(currentTime);
     }
+  }
+
+  handleFlyingShooting(currentTime) {
+    if (currentTime - this.lastShootTime > 100) this.fireGatling(currentTime);
+  }
+
+  handleGroundShooting(currentTime) {
+    const isUzi = this.world.character.currentWeapon === "uzi";
+    const cooldown = isUzi ? 100 : 200;
+    if (currentTime - this.lastShootTime > cooldown)
+      this.executeGroundShot(isUzi, currentTime);
+  }
+
+  executeGroundShot(isUzi, currentTime) {
+    if (isUzi) this.fireUzi(currentTime);
+    else if (this.world.character.shoot()) this.fireShotgun(currentTime);
   }
 
   /**
@@ -48,32 +50,42 @@ class CombatManager {
   fireGatling(currentTime) {
     this.lastShootTime = currentTime;
     this.world.character.shoot();
+    const ammo = this.getChickenAmmo();
+    const startPos = this.getShotStartPosition();
+    const nearestEnemy = this.findNearestEnemy(startPos.x, startPos.y);
+    this.playGatlingSound(ammo.isChickenShot);
+    const bullet = this.createGatlingBullet(startPos, nearestEnemy, ammo);
+    if (ammo.isChickenShot) this.enhanceChickenShot(bullet, startPos);
+    this.world.bullets.push(bullet);
+    this.spawnShellCasing();
+  }
 
+  getChickenAmmo() {
     let ammoImage = null;
     let isChickenShot = false;
-
-    if (this.world.character.impaledChicken) {
-      this.world.character.shotsWithChicken++;
-      if (this.world.character.shotsWithChicken > 10) {
-        let imgPath =
-          this.world.character.IMPALED_CHICKEN_IMAGES[
-            this.world.character.shotsWithChicken % 2
-          ];
-        if (this.world.character.imageCache[imgPath])
-          ammoImage = this.world.character.imageCache[imgPath];
-        this.world.character.impaledChicken = false;
-        this.world.character.shotsWithChicken = 0;
+    const char = this.world.character;
+    if (char.impaledChicken) {
+      char.shotsWithChicken++;
+      if (char.shotsWithChicken > 10) {
+        const imgPath = char.IMPALED_CHICKEN_IMAGES[char.shotsWithChicken % 2];
+        ammoImage = char.imageCache[imgPath] || null;
+        char.impaledChicken = false;
+        char.shotsWithChicken = 0;
         isChickenShot = true;
       }
     }
+    return { ammoImage, isChickenShot };
+  }
 
-    let startX = this.world.character.otherDirection
-      ? this.world.character.x - 20
-      : this.world.character.x + 200;
-    let startY = this.world.character.y + 150;
-    let nearestEnemy = this.findNearestEnemy(startX, startY);
-    let spread = Math.random() * 20 - 10;
+  getShotStartPosition() {
+    const char = this.world.character;
+    return {
+      x: char.otherDirection ? char.x - 20 : char.x + 200,
+      y: char.y + 150,
+    };
+  }
 
+  playGatlingSound(isChickenShot) {
     let sound;
     if (this.world.character.impaledChicken || isChickenShot) {
       sound = this.world.chickenshot_sound.cloneNode(true);
@@ -83,39 +95,36 @@ class CombatManager {
     }
     sound.volume = this.world.volume;
     sound.play().catch(() => {});
+  }
 
-    let bullet = new GatlingBullet(
-      startX,
-      startY,
+  createGatlingBullet(startPos, target, ammo) {
+    const spread = Math.random() * 20 - 10;
+    return new GatlingBullet(
+      startPos.x,
+      startPos.y,
       this.world.character.otherDirection,
       spread,
-      nearestEnemy,
+      target,
       this.world,
-      ammoImage,
+      ammo.ammoImage,
     );
+  }
 
-    if (isChickenShot) {
-      bullet.width = 60;
-      bullet.height = 60;
-      bullet.isSpinning = true;
+  enhanceChickenShot(bullet, startPos) {
+    bullet.width = 60;
+    bullet.height = 60;
+    bullet.isSpinning = true;
+    this.spawnFeatherParticles(startPos);
+  }
 
-      for (let i = 0; i < 20; i++) {
-        let color =
-          Math.random() > 0.5
-            ? "rgba(255, 255, 255, 1)"
-            : "rgba(139, 69, 19, 1)";
-        this.world.particles.push(
-          new Particle(
-            startX + Math.random() * 40 - 20,
-            startY + Math.random() * 40 - 20,
-            color,
-          ),
-        );
-      }
+  spawnFeatherParticles(startPos) {
+    for (let i = 0; i < 20; i++) {
+      const color =
+        Math.random() > 0.5 ? "rgba(255, 255, 255, 1)" : "rgba(139, 69, 19, 1)";
+      const pX = startPos.x + Math.random() * 40 - 20;
+      const pY = startPos.y + Math.random() * 40 - 20;
+      this.world.particles.push(new Particle(pX, pY, color));
     }
-
-    this.world.bullets.push(bullet);
-    this.spawnShellCasing();
   }
 
   /**

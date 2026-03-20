@@ -54,142 +54,201 @@ class WorldRenderer {
   draw() {
     if (!this.world.isActive) return;
 
+    this.prepareFrame();
+    this.drawWorldElements();
+    this.drawGameObjects();
+    this.finalizeFrame();
+    this.drawUI();
+    this.updateCamera();
+  }
+
+  /**
+   * Bereitet den Frame vor (Canvas leeren, Kamera verschieben).
+   */
+  prepareFrame() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.translate(
       this.world.camera_x + this.world.shake_x,
       this.world.shake_y,
     );
+  }
 
-    this.world.backgroundObjects.forEach((bgo) => {
-      if (this.isVisible(bgo)) {
-        const parallaxOffset = this.world.camera_x * (bgo.parallaxFactor - 1);
-        if (bgo.img) {
-          this.ctx.drawImage(
-            bgo.img,
-            bgo.x + parallaxOffset,
-            bgo.y,
-            bgo.width,
-            bgo.height,
-          );
-        }
-      }
-    });
+  /**
+   * Zeichnet alle statischen und parallax-scrollenden Hintergrundelemente.
+   */
+  drawWorldElements() {
+    this.drawObjectsWithParallax(this.world.backgroundObjects);
+    this.drawObjectsWithParallax(this.world.clouds);
+  }
 
-    this.world.clouds.forEach((cloud) => {
-      if (this.isVisible(cloud)) {
-        const parallaxOffset = this.world.camera_x * (cloud.parallaxFactor - 1);
-        if (cloud.img) {
-          this.ctx.drawImage(
-            cloud.img,
-            cloud.x + parallaxOffset,
-            cloud.y,
-            cloud.width,
-            cloud.height,
-          );
-        }
-      }
-    });
+  /**
+   * Zeichnet alle interaktiven Spielobjekte.
+   */
+  drawGameObjects() {
+    if (this.world.character.imageLoaded) this.addToMap(this.world.character);
+    this.drawObjects(this.world.enemies);
+    this.drawObjects(this.world.bullets);
+    this.drawObjects(this.world.casings);
+    this.drawObjects(this.world.explosions);
+    this.drawObjects(this.world.throwableObjects);
+    this.drawParticles();
+    this.drawObjects(this.world.coins);
+    this.drawObjects(this.world.salsaBottles);
+    this.drawObjects(this.world.energyBalls);
+  }
 
-    if (this.world.character.imageLoaded) {
-      this.addToMap(this.world.character);
-    }
-
-    this.world.enemies.forEach((enemy) => {
-      if (enemy.imageLoaded &amp;&amp; this.isVisible(enemy)) {
-        this.addToMap(enemy);
-      }
-    });
-
-    this.world.bullets.forEach((bullet) => {
-      if (bullet.imageLoaded &amp;&amp; this.isVisible(bullet)) {
-        this.addToMap(bullet);
-      }
-    });
-
-    this.world.casings.forEach((casing) => {
-      if (casing.imageLoaded &amp;&amp; this.isVisible(casing)) {
-        this.addToMap(casing);
-      }
-    });
-
-    this.world.explosions.forEach((explosion) => {
-      if (this.isVisible(explosion)) {
-        this.addToMap(explosion);
-      }
-    });
-
-    this.world.throwableObjects.forEach((bottle) => {
-      if (bottle.imageLoaded &amp;&amp; this.isVisible(bottle)) {
-        this.addToMap(bottle);
-      }
-    });
-
-    this.world.particles.forEach((particle) => {
-      if (this.isVisible(particle)) {
-        particle.draw(this.ctx);
-      }
-    });
-
-    this.world.coins.forEach((coin) => {
-      if (this.isVisible(coin)) {
-        this.addToMap(coin);
-      }
-    });
-
-    this.world.salsaBottles.forEach((bottle) => {
-      if (bottle.imageLoaded &amp;&amp; this.isVisible(bottle)) {
-        this.addToMap(bottle);
-      }
-    });
-
-    this.world.energyBalls.forEach((ball) => {
-      if (this.isVisible(ball)) {
-        this.addToMap(ball);
-      }
-    });
-
+  /**
+   * Setzt die Kamera-Transformation zurück.
+   */
+  finalizeFrame() {
     this.ctx.translate(
       -this.world.camera_x - this.world.shake_x,
       -this.world.shake_y,
     );
+  }
 
+  /**
+   * Zeichnet alle Elemente der Benutzeroberfläche (UI).
+   */
+  drawUI() {
     this.addToMap(this.world.statusBar);
     this.addToMap(this.world.coinBar);
+    this.drawScoreAndBottles();
+    this.drawLevelInfo();
+    if (this.world.isShowingWrongWay) this.drawWrongWayMessage();
+    this.drawIngameTip();
+  }
 
+  /**
+   * Aktualisiert die Kameraposition.
+   */
+  updateCamera() {
+    this.world.camera_x = -this.world.character.x + 100;
+  }
+
+  /**
+   * Zeichnet den In-Game-Tipp, falls er aktiv ist.
+   * @returns {void}
+   */
+  drawIngameTip() {
+    if (!this.world.showPepistolTip) return;
+
+    const tipText1 =
+      'Tipp: Durch die magischen Uzis verwandelt sich Pepe beim Schießen in "Pepistol".';
+    const tipText2 =
+      "Er vollführt wilde Aktionen, wenn man das Mausrad bewegt!";
+
+    this.ctx.save();
+
+   
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    const boxWidth = 600;
+    const boxHeight = 80;
+    const boxX = (this.canvas.width - boxWidth) / 2;
+    const boxY = this.canvas.height - boxHeight - 20;
+    this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    
+    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+   
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "bold 16px sans-serif";
+    this.ctx.textAlign = "center";
+    this.ctx.fillText(tipText1, this.canvas.width / 2, boxY + 35);
+    this.ctx.font = "16px sans-serif";
+    this.ctx.fillText(tipText2, this.canvas.width / 2, boxY + 60);
+
+    this.ctx.restore();
+  }
+
+  /**
+   * Hilfsfunktion zum Zeichnen von Objekt-Arrays.
+   * @param {MovableObject[]} objects - Das zu zeichnende Array.
+   */
+  drawObjects(objects) {
+    objects.forEach((obj) => {
+      if (obj.imageLoaded !== false &amp;&amp; this.isVisible(obj)) {
+        this.addToMap(obj);
+      }
+    });
+  }
+
+  /**
+   * Hilfsfunktion zum Zeichnen von Objekt-Arrays mit Parallax-Effekt.
+   * @param {BackgroundObject[]} objects - Das zu zeichnende Array.
+   */
+  drawObjectsWithParallax(objects) {
+    objects.forEach((bgo) => {
+      if (this.isVisible(bgo) &amp;&amp; bgo.img) {
+        const parallaxOffset = this.world.camera_x * (bgo.parallaxFactor - 1);
+        this.ctx.drawImage(
+          bgo.img,
+          bgo.x + parallaxOffset,
+          bgo.y,
+          bgo.width,
+          bgo.height,
+        );
+      }
+    });
+  }
+
+  /**
+   * Zeichnet Partikel, die eine eigene `draw`-Methode haben.
+   */
+  drawParticles() {
+    this.world.particles.forEach((particle) => {
+      if (this.isVisible(particle)) particle.draw(this.ctx);
+    });
+  }
+
+  /**
+   * Zeichnet den Punktestand und die Anzahl der Flaschen.
+   */
+  drawScoreAndBottles() {
     this.ctx.font = "40px sans-serif";
     this.ctx.fillStyle = "white";
     this.ctx.fillText("+ " + this.world.score, 320, 100);
-
-    if (this.bottleIcon.complete) {
+    if (this.bottleIcon.complete)
       this.ctx.drawImage(this.bottleIcon, 30, 105, 35, 35);
-    }
     this.ctx.font = "28px sans-serif";
     this.ctx.fillText("x " + this.world.character.bottles, 75, 133);
+  }
 
-    this.ctx.font = "30px sans-serif";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      "Level: " +
-        this.world.levelManager.level +
-        " | Zeit: " +
-        (this.world.levelManager.maxLevelTime -
-          this.world.levelManager.levelTimer) +
-        "s",
-      360,
-      50,
-    );
-    this.ctx.textAlign = "start";
-
+  /**
+   * Zeichnet die Level- und Zeitinformationen oder die Boss-Lebensleiste.
+   */
+  drawLevelInfo() {
     if (this.world.levelManager.bossSpawned) {
       this.addToMap(this.world.endbossBar);
+    } else {
+      this.ctx.font = "30px sans-serif";
+      this.ctx.textAlign = "center";
+      const time =
+        this.world.levelManager.maxLevelTime -
+        this.world.levelManager.levelTimer;
+      this.ctx.fillText(
+        `Level: ${this.world.levelManager.level} | Zeit: ${time}s`,
+        360,
+        50,
+      );
+      this.ctx.textAlign = "start";
     }
+  }
 
-    this.world.camera_x = -this.world.character.x + 100;
-
-    let self = this;
-    requestAnimationFrame(function () {
-      self.draw();
-    });
+  drawWrongWayMessage() {
+    this.ctx.save();
+    this.ctx.font = "bold 40px sans-serif";
+    this.ctx.fillStyle = "rgba(255, 0, 0, 0.9)";
+    this.ctx.strokeStyle = "black";
+    this.ctx.lineWidth = 2;
+    this.ctx.textAlign = "center";
+    const text = "FALSCHE RICHTUNG!";
+    this.ctx.strokeText(text, this.canvas.width / 2, this.canvas.height / 2);
+    this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+    this.ctx.restore();
   }
 
   /**
@@ -349,13 +408,13 @@ class WorldRenderer {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 21:03:36 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

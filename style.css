@@ -178,7 +178,7 @@ canvas {
   }
 }
 
-/* Turn Device Screen for Tablets and Phones in Portrait */
+
 #turnDeviceScreen {
   display: none;
   position: fixed;
@@ -237,7 +237,6 @@ canvas {
   }
 }
 
-/* --- Ausgelagerte Styles aus der index.html --- */
 .turn-device-text {
   color: white;
   font-family: sans-serif;

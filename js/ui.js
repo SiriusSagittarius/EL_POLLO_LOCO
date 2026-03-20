@@ -55,17 +55,29 @@ Pepe wusste, was das bedeutete. Das Oberhuhn wollte sie in seinen Harem aus Sing
 }
 
 function playIntroVideo(onComplete) {
-  createAndPlayVideo("introVideo", "video/intro.mp4", "Intro überspringen ⏭", 100, onComplete);
+  createAndPlayVideo(
+    "introVideo",
+    "video/intro.mp4",
+    "Intro überspringen ⏭",
+    100,
+    onComplete,
+  );
 }
 
-function playOutroVideoAndRestart() {
+function playOutroVideoAndShowFinish() {
   document.getElementById("winScreen").style.display = "none";
-  playOutroVideo(() => backToMenu());
+  playOutroVideo(() => showFinishScreen());
 }
 
 function playOutroVideo(onComplete) {
   if (world && world.background_sound) world.background_sound.pause();
-  createAndPlayVideo("outroVideo", "video/win.mp4", "Video überspringen ⏭", 2000, onComplete);
+  createAndPlayVideo(
+    "outroVideo",
+    "video/win.mp4",
+    "Video überspringen ⏭",
+    2000,
+    onComplete,
+  );
 }
 
 function createAndPlayVideo(videoId, src, skipText, zIndex, onComplete) {
@@ -149,6 +161,13 @@ function showCrosshair() {
 function hideCrosshair() {
   if (crosshair) crosshair.style.display = "none";
   if (canvas) canvas.style.cursor = "default";
+}
+
+function showFinishScreen() {
+  let finishScreen = document.getElementById("finishScreen");
+  if (finishScreen) {
+    finishScreen.style.display = "flex";
+  }
 }
 
 function toggleHelp() {

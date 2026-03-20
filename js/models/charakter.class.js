@@ -6,8 +6,8 @@
 class Character extends MovableObject {
   height = 280;
   width = 250;
-  y = 80;
-  speed = 3;
+  y = 150;
+  speed = 200; // pixels per second
   otherDirection = false;
   isShooting = false;
   isFlying = false;
@@ -170,86 +170,116 @@ class Character extends MovableObject {
     this.loadImages(this.IMAGES_UZI_SHOTWALK);
     this.loadImages(this.IMAGES_UZI_WHEEL_UP);
     this.loadImages(this.IMAGES_UZI_WHEEL_DOWN);
-    this.applyGravity();
-    this.animate();
+    this.gravityEnabled = true;
   }
 
   /**
-   * Startet die kontinuierliche Abfrage von Bewegungen und das Abspielen der jeweiligen Animationen.
-   * @returns {void}
+   * Main update loop for the character.
+   * @param {number} deltaTime - Time since last frame.
    */
-  animate() {
-    setInterval(() => {
-      if (this.isFlying) {
-        if (this.world && this.world.keyboard.SPACE) {
-          this.x += Math.cos(this.worldAngle) * this.speed * 2;
-          this.y += Math.sin(this.worldAngle) * this.speed * 2;
-        }
-      } else {
-        if (this.world && this.world.keyboard.RIGHT) {
-          this.x += this.speed;
-          this.otherDirection = false;
-        }
-        if (this.world && this.world.keyboard.LEFT) {
-          this.x -= this.speed;
-          this.otherDirection = true;
-        }
-        if (this.world && this.world.keyboard.SPACE && !this.isAboveGround()) {
-          this.jump();
-        }
-      }
-    }, 1000 / 60);
+  update(deltaTime) {
+    super.update(deltaTime); // Handles gravity
+    this.updateMovement(deltaTime);
+    this.updateAnimation(deltaTime);
+  }
 
-    setInterval(() => {
-      if (this.isDead()) {
-        this.playAnimation(this.IMAGES_DEAD);
-      } else if (this.isHurt()) {
-        this.playAnimation(this.IMAGES_HURT);
-      } else if (this.isFlying) {
-        if (this.isWheelUp) {
-          this.playAnimation(this.IMAGES_WHEEL_UP);
-        } else if (this.isWheelDown) {
-          this.playAnimation(this.IMAGES_WHEEL_DOWN);
-        } else if (this.isShooting) {
-          this.playAnimation(this.IMAGES_FLYING_FIRE);
-        } else if (this.world && this.world.keyboard.SPACE) {
-          const verticalDirection = Math.sin(this.worldAngle);
-          if (verticalDirection < -0.1) {
-            this.playAnimation(this.IMAGES_FLYING_UP);
-          } else if (verticalDirection > 0.1) {
-            this.playAnimation(this.IMAGES_FLYING_DOWN);
-          } else {
-            this.playAnimation(this.IMAGES_FLYING);
-          }
-        } else {
-          this.playAnimation(this.IMAGES_FLYING);
-        }
-      } else if (this.isAboveGround()) {
-        this.playAnimation(this.IMAGES_JUMPING);
-      } else if (this.isUziWheelUp) {
-        this.playAnimation(this.IMAGES_UZI_WHEEL_UP);
-      } else if (this.isUziWheelDown) {
-        this.playAnimation(this.IMAGES_UZI_WHEEL_DOWN);
-      } else if (this.isUziForward) {
-        if (
-          this.world &&
-          (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)
-        ) {
-          this.playAnimation(this.IMAGES_UZI_SHOTWALK);
-        } else {
-          this.playAnimation(this.IMAGES_UZI_SHOT);
-        }
-      } else if (this.isShooting) {
-        this.playAnimation(this.IMAGES_SHOOTING);
-      } else if (
-        this.world &&
-        (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)
-      ) {
-        this.playAnimation(this.IMAGES_WALKING);
-      } else {
-        this.playAnimation(this.IMAGES_IDLE);
-      }
-    }, 100);
+  /**
+   * Aktualisiert die Spielerbewegung basierend auf Tastatureingaben.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  updateMovement(deltaTime) {
+    if (this.isFlying) this.handleFlyingMovement(deltaTime);
+    else this.handleGroundMovement(deltaTime);
+  }
+
+  /**
+   * Behandelt die Bewegung am Boden und Sprünge.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  handleGroundMovement(deltaTime) {
+    if (this.world && this.world.keyboard.RIGHT) {
+      this.x += this.speed * deltaTime;
+      this.otherDirection = false;
+    }
+    if (this.world && this.world.keyboard.LEFT) {
+      this.x -= this.speed * deltaTime;
+      this.otherDirection = true;
+    }
+    if (this.world && this.world.keyboard.SPACE && !this.isAboveGround()) {
+      this.jump();
+    }
+  }
+
+  /**
+   * Behandelt die Bewegung in der Luft (Flugmodus).
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  handleFlyingMovement(deltaTime) {
+    if (this.world && this.world.keyboard.SPACE) {
+      this.x += Math.cos(this.worldAngle) * this.speed * 2 * deltaTime;
+      this.y += Math.sin(this.worldAngle) * this.speed * 2 * deltaTime;
+    }
+  }
+
+  /**
+   * Wählt die passende Animation aus und spielt sie ab.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   */
+  updateAnimation(deltaTime) {
+    this.animationTimer += deltaTime;
+    if (this.animationTimer >= 0.1) {
+      // 10fps
+      const images = this.getAnimationImages();
+      this.playAnimation(images);
+      this.animationTimer = 0;
+    }
+  }
+
+  /**
+   * Ermittelt das passende Animations-Array basierend auf dem Charakterstatus.
+   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
+   */
+  getAnimationImages() {
+    if (this.isDead()) return this.IMAGES_DEAD;
+    if (this.isHurt()) return this.IMAGES_HURT;
+    if (this.isFlying) return this.getFlyingAnimationImages();
+    if (this.isAboveGround()) return this.IMAGES_JUMPING;
+    return this.getGroundAnimationImages();
+  }
+
+  /**
+   * Ermittelt die Animation für den Flugmodus.
+   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
+   */
+  getFlyingAnimationImages() {
+    if (this.isWheelUp) return this.IMAGES_WHEEL_UP;
+    if (this.isWheelDown) return this.IMAGES_WHEEL_DOWN;
+    if (this.isShooting) return this.IMAGES_FLYING_FIRE;
+    if (this.world && this.world.keyboard.SPACE) {
+      const vDir = Math.sin(this.worldAngle);
+      if (vDir < -0.1) return this.IMAGES_FLYING_UP;
+      if (vDir > 0.1) return this.IMAGES_FLYING_DOWN;
+    }
+    return this.IMAGES_FLYING;
+  }
+
+  /**
+   * Ermittelt die Animation für den Bodenkampf.
+   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
+   */
+  getGroundAnimationImages() {
+    if (this.isUziWheelUp) return this.IMAGES_UZI_WHEEL_UP;
+    if (this.isUziWheelDown) return this.IMAGES_UZI_WHEEL_DOWN;
+    if (this.isUziForward) {
+      const isMoving =
+        this.world && (this.world.keyboard.RIGHT || this.world.keyboard.LEFT);
+      return isMoving ? this.IMAGES_UZI_SHOTWALK : this.IMAGES_UZI_SHOT;
+    }
+    if (this.isShooting) return this.IMAGES_SHOOTING;
+    if (this.world && (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)) {
+      return this.IMAGES_WALKING;
+    }
+    return this.IMAGES_IDLE;
   }
 
   /**
@@ -257,7 +287,7 @@ class Character extends MovableObject {
    * @returns {void}
    */
   jump() {
-    this.speedY = 30;
+    this.speedY = 700; // pixels per second
     this.jump_sound.play().catch(() => {});
   }
 
@@ -361,6 +391,37 @@ class Character extends MovableObject {
     } else {
       if (this.world) this.broom_sound.volume = this.world.volume;
       this.broom_sound.play().catch(() => {});
+    }
+  }
+
+  /**
+   * Schaltet zwischen den primären Boden-Waffen (Uzi, Shotgun) um.
+   * @returns {void}
+   */
+  cycleWeapon() {
+    // Definiere die verfügbaren Waffen
+    const groundWeapons = ["uzi", "shotgun"];
+    const allWeapons = ["uzi", "shotgun", "broom"];
+
+    // Prüfe, ob der Besen Treibstoff hat
+    let availableWeapons = groundWeapons;
+    if (this.world && this.world.coinBar.percentage > 0) {
+      availableWeapons = allWeapons;
+    }
+
+    let currentIndex = availableWeapons.indexOf(this.currentWeapon);
+    if (currentIndex === -1) {
+      currentIndex = 0; // Fallback, falls die aktuelle Waffe nicht verfügbar ist
+    }
+
+    let nextIndex = (currentIndex + 1) % availableWeapons.length;
+    this.currentWeapon = availableWeapons[nextIndex];
+
+    // Sorge dafür, dass der Flugstatus zur Waffe passt
+    if (this.currentWeapon === "broom" && !this.isFlying) {
+      this.toggleFlying();
+    } else if (this.currentWeapon !== "broom" && this.isFlying) {
+      this.toggleFlying();
     }
   }
 

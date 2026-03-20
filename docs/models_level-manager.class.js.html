@@ -39,7 +39,7 @@ class LevelManager {
     this.world = world;
     this.level = 1;
     this.levelTimer = 0;
-    this.maxLevelTime = 120;
+    this.maxLevelTime = 60;
     this.endlessMode = false;
     this.bossSpawned = false;
     this.spawnIntervalId = null;
@@ -56,37 +56,41 @@ class LevelManager {
     this.levelTimer = 0;
     this.bossSpawned = false;
     this.world.bossDying = false;
+    this.startTimer();
+    this.startSpawning();
+  }
 
+  startTimer() {
     this.timerIntervalId = setInterval(() => {
       this.levelTimer++;
     }, 1000);
+  }
 
-    let spawnRate = this.level === 1 ? 800 : 400;
-
+  startSpawning() {
+    const spawnRate = this.level === 1 ? 800 : 400;
     this.spawnIntervalId = setInterval(() => {
-      let count = Math.random() &lt; 0.3 ? 2 : 1;
-
-      for (let i = 0; i &lt; count; i++) {
-        let offset = 600 + Math.random() * 600;
-        let spawnX =
-          this.world.character.x + (Math.random() &lt; 0.5 ? offset : -offset);
-        let enemy;
-
-        if (Math.random() &lt; 0.5) {
-          enemy = new Chicken(spawnX);
-        } else {
-          enemy = new SmallChicken(spawnX);
-        }
-        enemy.world = this.world;
-        this.world.enemies.push(enemy);
-      }
-
-      this.world.enemies = this.world.enemies.filter((e) => {
-        const keep = Math.abs(e.x - this.world.character.x) &lt; 2000;
-        if (!keep) e.stopIntervals();
-        return keep;
-      });
+      this.spawnEnemies();
+      this.cleanupDistantEnemies();
     }, spawnRate);
+  }
+
+  spawnEnemies() {
+    const count = Math.random() &lt; 0.3 ? 2 : 1;
+    for (let i = 0; i &lt; count; i++) {
+      const spawnX = this.world.character.x + 600 + Math.random() * 600;
+      const enemy =
+        Math.random() &lt; 0.5 ? new Chicken(spawnX) : new SmallChicken(spawnX);
+      enemy.world = this.world;
+      this.world.enemies.push(enemy);
+    }
+  }
+
+  cleanupDistantEnemies() {
+    this.world.enemies = this.world.enemies.filter((e) => {
+      const keep = Math.abs(e.x - this.world.character.x) &lt; 2000;
+      if (!keep) e.stopIntervals();
+      return keep;
+    });
   }
 
   /**
@@ -175,36 +179,33 @@ class LevelManager {
    * @returns {void}
    */
   spawnBackgroundChunk(x) {
-    let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
-    let imageNames = ["1.png", "2.png"];
-    let imageName = imageNames[relativeIndex];
+    const imageName = this.getChunkImageName(x);
+    this.spawnLayer(x, `img/5_background/layers/5_air/${imageName}`, 0);
+    this.spawnLayer(x, `img/5_background/layers/2_berge/${imageName}`, 0.2);
+    this.spawnGroundLayer(x, `img/5_background/layers/1_boden/${imageName}`);
+    this.spawnCacti(x);
+  }
 
-    let air = new BackgroundObject(
-      `img/5_background/layers/5_air/${imageName}`,
-      x,
-      0,
-    );
-    air.width = this.bgWidth;
-    this.world.backgroundObjects.push(air);
+  getChunkImageName(x) {
+    const relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
+    return ["1.png", "2.png"][relativeIndex];
+  }
 
-    let mountain = new BackgroundObject(
-      `img/5_background/layers/2_berge/${imageName}`,
-      x,
-      0.2,
-    );
-    mountain.width = this.bgWidth;
-    this.world.backgroundObjects.push(mountain);
+  spawnLayer(x, path, parallax) {
+    const layer = new BackgroundObject(path, x, parallax);
+    layer.width = this.bgWidth;
+    this.world.backgroundObjects.push(layer);
+  }
 
-    let ground = new BackgroundObject(
-      `img/5_background/layers/1_boden/${imageName}`,
-      x,
-      1,
-    );
+  spawnGroundLayer(x, path) {
+    const ground = new BackgroundObject(path, x, 1);
     ground.width = this.bgWidth;
     ground.y += 380;
     this.world.backgroundObjects.push(ground);
+  }
 
-    let imageblume = [
+  spawnCacti(x) {
+    const imageblume = [
       "1.png",
       "2.png",
       "3.png",
@@ -213,23 +214,26 @@ class LevelManager {
       "6.png",
       "7.png",
     ];
-    let cactusCount = 2 + Math.floor(Math.random() * 3);
-
+    const cactusCount = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i &lt; cactusCount; i++) {
-      let randomImage =
+      const randomImage =
         imageblume[Math.floor(Math.random() * imageblume.length)];
-      let cactus = new BackgroundObject(
+      const cactusX = x + Math.random() * (this.bgWidth - 100);
+      const cactus = new BackgroundObject(
         `img/5_background/layers/3_blum/${randomImage}`,
-        x + Math.random() * (this.bgWidth - 100),
+        cactusX,
         1,
       );
-
-      cactus.height = 60 + Math.random() * 180;
-      cactus.width = cactus.height * 1.2;
-      let randomBaseY = 380 + Math.random() * 80;
-      cactus.y = randomBaseY - cactus.height;
+      this.configureCactus(cactus);
       this.world.backgroundObjects.push(cactus);
     }
+  }
+
+  configureCactus(cactus) {
+    cactus.height = 60 + Math.random() * 180;
+    cactus.width = cactus.height * 1.2;
+    const randomBaseY = 380 + Math.random() * 80;
+    cactus.y = randomBaseY - cactus.height;
   }
 
   /**
@@ -271,13 +275,13 @@ class LevelManager {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 19:29:01 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 21:03:36 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -42,7 +42,7 @@ class GatlingBullet extends MovableObject {
     this.target = target;
     this.world = world;
 
-    let bulletSpeed = 50;
+    let bulletSpeed = 3000; // pixels per second
 
     if (target) {
       let targetX = target.x + target.width / 2;
@@ -59,47 +59,52 @@ class GatlingBullet extends MovableObject {
       this.speedY = 0;
       this.otherDirection = direction;
     }
-
-    this.shoot();
   }
 
   /**
-   * Startet die Bewegungs- und optional die Rotationslogik des Projektils.
-   * @returns {void}
+   * Main update loop for the bullet.
+   * @param {number} deltaTime - Time since last frame.
    */
-  shoot() {
-    this.setStoppableInterval(() => {
-      if (this.target && !this.target.isDead()) {
-        let bulletSpeed = 50;
-        let targetX = this.target.x + this.target.width / 2;
-        let targetY = this.target.y + this.target.height / 2;
-        let dx = targetX - this.x;
-        let dy = targetY - this.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
+  update(deltaTime) {
+    this.updateHoming();
+    this.updatePosition(deltaTime);
+    this.updateRotation(deltaTime);
+    this.spawnTrailParticles();
+  }
 
-        if (distance > 0) {
-          this.speedX = (dx / distance) * bulletSpeed;
-          this.speedY = (dy / distance) * bulletSpeed;
-          this.otherDirection = this.speedX < 0;
-        }
+  updateHoming() {
+    if (this.target && !this.target.isDead()) {
+      let bulletSpeed = 3000;
+      let targetX = this.target.x + this.target.width / 2;
+      let targetY = this.target.y + this.target.height / 2;
+      let dx = targetX - this.x;
+      let dy = targetY - this.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > 0) {
+        this.speedX = (dx / distance) * bulletSpeed;
+        this.speedY = (dy / distance) * bulletSpeed;
+        this.otherDirection = this.speedX < 0;
       }
+    }
+  }
 
-      this.x += this.speedX;
-      this.y += this.speedY;
+  updatePosition(deltaTime) {
+    this.x += this.speedX * deltaTime;
+    this.y += this.speedY * deltaTime;
+  }
 
-      if (this.isSpinning) {
-        this.angle += this.speedX > 0 ? 0.3 : -0.3;
-      }
+  updateRotation(deltaTime) {
+    if (this.isSpinning) {
+      this.angle += (this.speedX > 0 ? 0.3 : -0.3) * 60 * deltaTime;
+    }
+  }
 
-      if (this.world) {
-        this.world.particles.push(
-          new Particle(
-            this.x + this.width / 2,
-            this.y + this.height / 2,
-            "rgba(255, 100, 0, 0.5)",
-          ),
-        );
-      }
-    }, 1000 / 60);
+  spawnTrailParticles() {
+    if (this.world) {
+      const pX = this.x + this.width / 2;
+      const pY = this.y + this.height / 2;
+      this.world.particles.push(new Particle(pX, pY, "rgba(255, 100, 0, 0.5)"));
+    }
   }
 }

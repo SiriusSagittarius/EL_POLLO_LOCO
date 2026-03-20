@@ -24,30 +24,32 @@ class ThrowableBottle extends MovableObject {
     this.width = 60;
     this.height = 70;
     this.otherDirection = direction;
-    this.throw();
+    this.gravityEnabled = true;
+    this.speedY = 500; 
   }
 
   /**
-   * Wendet Gravitation auf die Flasche an, sodass sie in einer ballistischen Kurve fliegt.
-   * @returns {void}
+   * Main update loop for the bottle.
+   * @param {number} deltaTime - Time since last frame.
    */
-  applyGravity() {
-    this.setStoppableInterval(() => {
-      this.y -= this.speedY;
-      this.speedY -= this.acceleration;
-    }, 1000 / 25);
+  update(deltaTime) {
+    super.update(deltaTime); 
+    this.updateMovement(deltaTime);
+    this.updateAnimation(deltaTime);
   }
 
-  /**
-   * Führt die Wurf-Aktion (inklusive Gravitation, Bewegung und Rotation) aus.
-   * @returns {void}
-   */
-  throw() {
-    this.speedY = 20;
-    this.applyGravity();
-    this.setStoppableInterval(() => {
-      this.x += this.otherDirection ? -12 : 12;
+  updateMovement(deltaTime) {
+    const horizontalSpeed = 300; 
+    this.x +=
+      (this.otherDirection ? -horizontalSpeed : horizontalSpeed) * deltaTime;
+  }
+
+  updateAnimation(deltaTime) {
+    this.animationTimer += deltaTime;
+    if (this.animationTimer > 1 / 25) {
+      
       this.playAnimation(this.IMAGES_ROTATION);
-    }, 1000 / 25);
+      this.animationTimer = 0;
+    }
   }
 }

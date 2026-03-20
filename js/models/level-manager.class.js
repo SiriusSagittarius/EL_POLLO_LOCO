@@ -28,37 +28,41 @@ class LevelManager {
     this.levelTimer = 0;
     this.bossSpawned = false;
     this.world.bossDying = false;
+    this.startTimer();
+    this.startSpawning();
+  }
 
+  startTimer() {
     this.timerIntervalId = setInterval(() => {
       this.levelTimer++;
     }, 1000);
+  }
 
-    let spawnRate = this.level === 1 ? 800 : 400;
-
+  startSpawning() {
+    const spawnRate = this.level === 1 ? 800 : 400;
     this.spawnIntervalId = setInterval(() => {
-      let count = Math.random() < 0.3 ? 2 : 1;
-
-      for (let i = 0; i < count; i++) {
-        let offset = 600 + Math.random() * 600;
-        let spawnX =
-          this.world.character.x + (Math.random() < 0.5 ? offset : -offset);
-        let enemy;
-
-        if (Math.random() < 0.5) {
-          enemy = new Chicken(spawnX);
-        } else {
-          enemy = new SmallChicken(spawnX);
-        }
-        enemy.world = this.world;
-        this.world.enemies.push(enemy);
-      }
-
-      this.world.enemies = this.world.enemies.filter((e) => {
-        const keep = Math.abs(e.x - this.world.character.x) < 2000;
-        if (!keep) e.stopIntervals();
-        return keep;
-      });
+      this.spawnEnemies();
+      this.cleanupDistantEnemies();
     }, spawnRate);
+  }
+
+  spawnEnemies() {
+    const count = Math.random() < 0.3 ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      const spawnX = this.world.character.x + 600 + Math.random() * 600;
+      const enemy =
+        Math.random() < 0.5 ? new Chicken(spawnX) : new SmallChicken(spawnX);
+      enemy.world = this.world;
+      this.world.enemies.push(enemy);
+    }
+  }
+
+  cleanupDistantEnemies() {
+    this.world.enemies = this.world.enemies.filter((e) => {
+      const keep = Math.abs(e.x - this.world.character.x) < 2000;
+      if (!keep) e.stopIntervals();
+      return keep;
+    });
   }
 
   /**
@@ -147,36 +151,33 @@ class LevelManager {
    * @returns {void}
    */
   spawnBackgroundChunk(x) {
-    let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
-    let imageNames = ["1.png", "2.png"];
-    let imageName = imageNames[relativeIndex];
+    const imageName = this.getChunkImageName(x);
+    this.spawnLayer(x, `img/5_background/layers/5_air/${imageName}`, 0);
+    this.spawnLayer(x, `img/5_background/layers/2_berge/${imageName}`, 0.2);
+    this.spawnGroundLayer(x, `img/5_background/layers/1_boden/${imageName}`);
+    this.spawnCacti(x);
+  }
 
-    let air = new BackgroundObject(
-      `img/5_background/layers/5_air/${imageName}`,
-      x,
-      0,
-    );
-    air.width = this.bgWidth;
-    this.world.backgroundObjects.push(air);
+  getChunkImageName(x) {
+    const relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
+    return ["1.png", "2.png"][relativeIndex];
+  }
 
-    let mountain = new BackgroundObject(
-      `img/5_background/layers/2_berge/${imageName}`,
-      x,
-      0.2,
-    );
-    mountain.width = this.bgWidth;
-    this.world.backgroundObjects.push(mountain);
+  spawnLayer(x, path, parallax) {
+    const layer = new BackgroundObject(path, x, parallax);
+    layer.width = this.bgWidth;
+    this.world.backgroundObjects.push(layer);
+  }
 
-    let ground = new BackgroundObject(
-      `img/5_background/layers/1_boden/${imageName}`,
-      x,
-      1,
-    );
+  spawnGroundLayer(x, path) {
+    const ground = new BackgroundObject(path, x, 1);
     ground.width = this.bgWidth;
     ground.y += 380;
     this.world.backgroundObjects.push(ground);
+  }
 
-    let imageblume = [
+  spawnCacti(x) {
+    const imageblume = [
       "1.png",
       "2.png",
       "3.png",
@@ -185,23 +186,26 @@ class LevelManager {
       "6.png",
       "7.png",
     ];
-    let cactusCount = 2 + Math.floor(Math.random() * 3);
-
+    const cactusCount = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i < cactusCount; i++) {
-      let randomImage =
+      const randomImage =
         imageblume[Math.floor(Math.random() * imageblume.length)];
-      let cactus = new BackgroundObject(
+      const cactusX = x + Math.random() * (this.bgWidth - 100);
+      const cactus = new BackgroundObject(
         `img/5_background/layers/3_blum/${randomImage}`,
-        x + Math.random() * (this.bgWidth - 100),
+        cactusX,
         1,
       );
-
-      cactus.height = 60 + Math.random() * 180;
-      cactus.width = cactus.height * 1.2;
-      let randomBaseY = 380 + Math.random() * 80;
-      cactus.y = randomBaseY - cactus.height;
+      this.configureCactus(cactus);
       this.world.backgroundObjects.push(cactus);
     }
+  }
+
+  configureCactus(cactus) {
+    cactus.height = 60 + Math.random() * 180;
+    cactus.width = cactus.height * 1.2;
+    const randomBaseY = 380 + Math.random() * 80;
+    cactus.y = randomBaseY - cactus.height;
   }
 
   /**

@@ -26,152 +26,201 @@ class WorldRenderer {
   draw() {
     if (!this.world.isActive) return;
 
+    this.prepareFrame();
+    this.drawWorldElements();
+    this.drawGameObjects();
+    this.finalizeFrame();
+    this.drawUI();
+    this.updateCamera();
+  }
+
+  /**
+   * Bereitet den Frame vor (Canvas leeren, Kamera verschieben).
+   */
+  prepareFrame() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.translate(
       this.world.camera_x + this.world.shake_x,
       this.world.shake_y,
     );
+  }
 
-    this.world.backgroundObjects.forEach((bgo) => {
-      if (this.isVisible(bgo)) {
-        const parallaxOffset = this.world.camera_x * (bgo.parallaxFactor - 1);
-        if (bgo.img) {
-          this.ctx.drawImage(
-            bgo.img,
-            bgo.x + parallaxOffset,
-            bgo.y,
-            bgo.width,
-            bgo.height,
-          );
-        }
-      }
-    });
+  /**
+   * Zeichnet alle statischen und parallax-scrollenden Hintergrundelemente.
+   */
+  drawWorldElements() {
+    this.drawObjectsWithParallax(this.world.backgroundObjects);
+    this.drawObjectsWithParallax(this.world.clouds);
+  }
 
-    this.world.clouds.forEach((cloud) => {
-      if (this.isVisible(cloud)) {
-        const parallaxOffset = this.world.camera_x * (cloud.parallaxFactor - 1);
-        if (cloud.img) {
-          this.ctx.drawImage(
-            cloud.img,
-            cloud.x + parallaxOffset,
-            cloud.y,
-            cloud.width,
-            cloud.height,
-          );
-        }
-      }
-    });
+  /**
+   * Zeichnet alle interaktiven Spielobjekte.
+   */
+  drawGameObjects() {
+    if (this.world.character.imageLoaded) this.addToMap(this.world.character);
+    this.drawObjects(this.world.enemies);
+    this.drawObjects(this.world.bullets);
+    this.drawObjects(this.world.casings);
+    this.drawObjects(this.world.explosions);
+    this.drawObjects(this.world.throwableObjects);
+    this.drawParticles();
+    this.drawObjects(this.world.coins);
+    this.drawObjects(this.world.salsaBottles);
+    this.drawObjects(this.world.energyBalls);
+  }
 
-    if (this.world.character.imageLoaded) {
-      this.addToMap(this.world.character);
-    }
-
-    this.world.enemies.forEach((enemy) => {
-      if (enemy.imageLoaded && this.isVisible(enemy)) {
-        this.addToMap(enemy);
-      }
-    });
-
-    this.world.bullets.forEach((bullet) => {
-      if (bullet.imageLoaded && this.isVisible(bullet)) {
-        this.addToMap(bullet);
-      }
-    });
-
-    this.world.casings.forEach((casing) => {
-      if (casing.imageLoaded && this.isVisible(casing)) {
-        this.addToMap(casing);
-      }
-    });
-
-    this.world.explosions.forEach((explosion) => {
-      if (this.isVisible(explosion)) {
-        this.addToMap(explosion);
-      }
-    });
-
-    this.world.throwableObjects.forEach((bottle) => {
-      if (bottle.imageLoaded && this.isVisible(bottle)) {
-        this.addToMap(bottle);
-      }
-    });
-
-    this.world.particles.forEach((particle) => {
-      if (this.isVisible(particle)) {
-        particle.draw(this.ctx);
-      }
-    });
-
-    this.world.coins.forEach((coin) => {
-      if (this.isVisible(coin)) {
-        this.addToMap(coin);
-      }
-    });
-
-    this.world.salsaBottles.forEach((bottle) => {
-      if (bottle.imageLoaded && this.isVisible(bottle)) {
-        this.addToMap(bottle);
-      }
-    });
-
-    this.world.energyBalls.forEach((ball) => {
-      if (this.isVisible(ball)) {
-        this.addToMap(ball);
-      }
-    });
-
+  /**
+   * Setzt die Kamera-Transformation zurück.
+   */
+  finalizeFrame() {
     this.ctx.translate(
       -this.world.camera_x - this.world.shake_x,
       -this.world.shake_y,
     );
+  }
 
+  /**
+   * Zeichnet alle Elemente der Benutzeroberfläche (UI).
+   */
+  drawUI() {
     this.addToMap(this.world.statusBar);
     this.addToMap(this.world.coinBar);
+    this.drawScoreAndBottles();
+    this.drawLevelInfo();
+    if (this.world.isShowingWrongWay) this.drawWrongWayMessage();
+    this.drawIngameTip();
+  }
 
+  /**
+   * Aktualisiert die Kameraposition.
+   */
+  updateCamera() {
+    this.world.camera_x = -this.world.character.x + 100;
+  }
+
+  /**
+   * Zeichnet den In-Game-Tipp, falls er aktiv ist.
+   * @returns {void}
+   */
+  drawIngameTip() {
+    if (!this.world.showPepistolTip) return;
+
+    const tipText1 =
+      'Tipp: Durch die magischen Uzis verwandelt sich Pepe beim Schießen in "Pepistol".';
+    const tipText2 =
+      "Er vollführt wilde Aktionen, wenn man das Mausrad bewegt!";
+
+    this.ctx.save();
+
+   
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    const boxWidth = 600;
+    const boxHeight = 80;
+    const boxX = (this.canvas.width - boxWidth) / 2;
+    const boxY = this.canvas.height - boxHeight - 20;
+    this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    
+    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+   
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "bold 16px sans-serif";
+    this.ctx.textAlign = "center";
+    this.ctx.fillText(tipText1, this.canvas.width / 2, boxY + 35);
+    this.ctx.font = "16px sans-serif";
+    this.ctx.fillText(tipText2, this.canvas.width / 2, boxY + 60);
+
+    this.ctx.restore();
+  }
+
+  /**
+   * Hilfsfunktion zum Zeichnen von Objekt-Arrays.
+   * @param {MovableObject[]} objects - Das zu zeichnende Array.
+   */
+  drawObjects(objects) {
+    objects.forEach((obj) => {
+      if (obj.imageLoaded !== false && this.isVisible(obj)) {
+        this.addToMap(obj);
+      }
+    });
+  }
+
+  /**
+   * Hilfsfunktion zum Zeichnen von Objekt-Arrays mit Parallax-Effekt.
+   * @param {BackgroundObject[]} objects - Das zu zeichnende Array.
+   */
+  drawObjectsWithParallax(objects) {
+    objects.forEach((bgo) => {
+      if (this.isVisible(bgo) && bgo.img) {
+        const parallaxOffset = this.world.camera_x * (bgo.parallaxFactor - 1);
+        this.ctx.drawImage(
+          bgo.img,
+          bgo.x + parallaxOffset,
+          bgo.y,
+          bgo.width,
+          bgo.height,
+        );
+      }
+    });
+  }
+
+  /**
+   * Zeichnet Partikel, die eine eigene `draw`-Methode haben.
+   */
+  drawParticles() {
+    this.world.particles.forEach((particle) => {
+      if (this.isVisible(particle)) particle.draw(this.ctx);
+    });
+  }
+
+  /**
+   * Zeichnet den Punktestand und die Anzahl der Flaschen.
+   */
+  drawScoreAndBottles() {
     this.ctx.font = "40px sans-serif";
     this.ctx.fillStyle = "white";
     this.ctx.fillText("+ " + this.world.score, 320, 100);
-
-    if (this.bottleIcon.complete) {
+    if (this.bottleIcon.complete)
       this.ctx.drawImage(this.bottleIcon, 30, 105, 35, 35);
-    }
     this.ctx.font = "28px sans-serif";
     this.ctx.fillText("x " + this.world.character.bottles, 75, 133);
+  }
 
-    if (!this.world.levelManager.bossSpawned) {
+  /**
+   * Zeichnet die Level- und Zeitinformationen oder die Boss-Lebensleiste.
+   */
+  drawLevelInfo() {
+    if (this.world.levelManager.bossSpawned) {
+      this.addToMap(this.world.endbossBar);
+    } else {
       this.ctx.font = "30px sans-serif";
       this.ctx.textAlign = "center";
+      const time =
+        this.world.levelManager.maxLevelTime -
+        this.world.levelManager.levelTimer;
       this.ctx.fillText(
-        "Level: " +
-          this.world.levelManager.level +
-          " | Zeit: " +
-          (this.world.levelManager.maxLevelTime -
-            this.world.levelManager.levelTimer) +
-          "s",
+        `Level: ${this.world.levelManager.level} | Zeit: ${time}s`,
         360,
         50,
       );
       this.ctx.textAlign = "start";
     }
+  }
 
-    if (this.world.levelManager.bossSpawned) {
-      this.addToMap(this.world.endbossBar);
-    }
-
-    if (this.world.isShowingWrongWay) {
-      this.ctx.save();
-      this.ctx.font = "bold 40px sans-serif";
-      this.ctx.fillStyle = "rgba(255, 0, 0, 0.9)";
-      this.ctx.strokeStyle = "black";
-      this.ctx.lineWidth = 2;
-      this.ctx.textAlign = "center";
-      const text = "FALSCHE RICHTUNG!";
-      this.ctx.strokeText(text, this.canvas.width / 2, this.canvas.height / 2);
-      this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
-      this.ctx.restore();
-    }
-
-    this.world.camera_x = -this.world.character.x + 100;
+  drawWrongWayMessage() {
+    this.ctx.save();
+    this.ctx.font = "bold 40px sans-serif";
+    this.ctx.fillStyle = "rgba(255, 0, 0, 0.9)";
+    this.ctx.strokeStyle = "black";
+    this.ctx.lineWidth = 2;
+    this.ctx.textAlign = "center";
+    const text = "FALSCHE RICHTUNG!";
+    this.ctx.strokeText(text, this.canvas.width / 2, this.canvas.height / 2);
+    this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+    this.ctx.restore();
   }
 
   /**

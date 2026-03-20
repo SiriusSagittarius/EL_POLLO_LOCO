@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: templates/gameover.js</title>
+    <title>JSDoc: Source: templates/finishscreen.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: templates/gameover.js</h1>
+    <h1 class="page-title">Source: templates/finishscreen.js</h1>
 
     
 
@@ -27,19 +27,15 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Rendert das HTML für den "Game Over"-Bildschirm.
- * @returns {string} Der HTML-String für den "Game Over"-Bildschirm.
+ * Rendert das HTML für den "Finish"-Bildschirm nach dem Outro.
+ * @returns {string} Der HTML-String für den "Finish"-Bildschirm.
  */
-function renderGameOverScreen() {
+function renderFinishScreen() {
   return `
-    &lt;!-- Game Over Screen -->
-    &lt;div id="gameOverScreen" style="display: none; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); justify-content: center; align-items: center; flex-direction: column; z-index: 999;">
-        &lt;h2 style="color: red; font-family: sans-serif; font-size: 60px">GAME OVER&lt;/h2>
-        &lt;span id="gameOverScore" style="color: white; font-family: sans-serif; font-size: 30px; margin-bottom: 20px;">Score: 0&lt;/span>
-        &lt;div style="display: flex; gap: 20px;">
-            &lt;button onclick="restartGame()" style="padding: 15px 30px; font-size: 24px; cursor: pointer; background-color: #FFAE00; border: none; border-radius: 10px; color: white;">Restart&lt;/button>
-            &lt;button onclick="backToMenu()" style="padding: 15px 30px; font-size: 24px; cursor: pointer; background-color: #555; border: none; border-radius: 10px; color: white;">Beenden&lt;/button>
-        &lt;/div>
+    &lt;!-- Finish Screen -->
+    &lt;div id="finishScreen" style="display: none; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); z-index: 3000; flex-direction: column; justify-content: center; align-items: center;">
+        &lt;div style="font-size: 100px; margin-bottom: 40px;">❤️&lt;/div>
+        &lt;button onclick="finishGameAndReload()" class="menu-btn">Finish&lt;/button>
     &lt;/div>
   `;
 }
