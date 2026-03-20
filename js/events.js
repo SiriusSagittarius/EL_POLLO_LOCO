@@ -6,8 +6,14 @@ function bindTouchEvents() {
   const bindBtn = (id, key) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener("touchstart", (e) => { e.preventDefault(); keyboard[key] = true; }, { passive: false });
-    btn.addEventListener("touchend", (e) => { e.preventDefault(); keyboard[key] = false; }, { passive: false });
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      keyboard[key] = true;
+    }, { passive: false });
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      keyboard[key] = false;
+    }, { passive: false });
   };
 
   bindBtn("btnLeft", "LEFT");
@@ -19,7 +25,10 @@ function bindTouchEvents() {
   const bindAction = (id, action) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener("touchstart", (e) => { e.preventDefault(); action(); }, { passive: false });
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      action();
+    }, { passive: false });
   };
 
   bindAction("btnUzi", () => {
@@ -47,8 +56,11 @@ function bindTouchEvents() {
   });
   bindAction("btnSpecial", () => {
     if (world && world.character) {
-      if (world.character.isFlying) world.character.triggerWheelAnimation(100);
-      else if (world.character.currentWeapon === "uzi") world.combatManager.triggerUziWheelAttack(100);
+      if (world.character.isFlying) {
+        world.character.triggerWheelAnimation(100);
+      } else if (world.character.currentWeapon === "uzi") {
+        world.combatManager.triggerUziWheelAttack(100);
+      }
     }
   });
 }
@@ -88,8 +100,11 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "Escape" || e.code === "KeyP") {
     if (world) {
-      if (document.getElementById("pauseMenu").style.display === "flex") resumeGame();
-      else pauseGame();
+      if (document.getElementById("pauseMenu").style.display === "flex") {
+        resumeGame();
+      } else {
+        pauseGame();
+      }
     }
   }
 });
@@ -105,13 +120,28 @@ window.addEventListener("keyup", (e) => {
   if (e.code === "KeyS") keyboard.S = false;
 });
 
-window.addEventListener("mousedown", (e) => { if (e.button === 0) keyboard.D = true; if (e.button === 2) keyboard.SPACE = true; });
-window.addEventListener("mouseup", (e) => { if (e.button === 0) keyboard.D = false; if (e.button === 2) keyboard.SPACE = false; });
-window.addEventListener("contextmenu", (e) => { e.preventDefault(); });
+window.addEventListener("mousedown", (e) => {
+  if (e.button === 0) keyboard.D = true;
+  if (e.button === 2) keyboard.SPACE = true;
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (e.button === 0) keyboard.D = false;
+  if (e.button === 2) keyboard.SPACE = false;
+});
+
+window.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
 
 window.addEventListener("wheel", (e) => {
   if (world && world.character) {
-    if (world.character.isFlying) { e.preventDefault(); world.character.triggerWheelAnimation(e.deltaY); }
-    else if (world.character.currentWeapon === "uzi") { e.preventDefault(); world.combatManager.triggerUziWheelAttack(e.deltaY); }
+    if (world.character.isFlying) {
+      e.preventDefault();
+      world.character.triggerWheelAnimation(e.deltaY);
+    } else if (world.character.currentWeapon === "uzi") {
+      e.preventDefault();
+      world.combatManager.triggerUziWheelAttack(e.deltaY);
+    }
   }
 }, { passive: false });

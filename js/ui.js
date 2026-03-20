@@ -141,21 +141,60 @@ function createAndPlayVideo(videoId, src, skipText, zIndex, onComplete) {
   video.play().catch((e) => finishVideo());
 }
 
-function showCrosshair() { if (crosshair) crosshair.style.display = "block"; if (canvas) canvas.style.cursor = "none"; }
-function hideCrosshair() { if (crosshair) crosshair.style.display = "none"; if (canvas) canvas.style.cursor = "default"; }
-function toggleHelp() { let help = document.getElementById("helpMenu"); help.style.display = help.style.display === "flex" ? "none" : "flex"; }
-function showOptions() { document.getElementById("startScreen").style.display = "none"; document.getElementById("optionsMenu").style.display = "flex"; }
-function closeOptions() { document.getElementById("optionsMenu").style.display = "none"; document.getElementById("startScreen").style.display = "flex"; }
-function closeHighscore() { document.getElementById("highscoreMenu").style.display = "none"; document.getElementById("startScreen").style.display = "flex"; document.getElementById("highscoreNameDisplay").style.display = "block"; }
-function exitGame() { window.close(); alert("Das Spiel wird beendet. Bitte schließe den Tab."); location.reload(); }
-function toggleFullscreen() { let container = document.getElementById("game-container"); if (!document.fullscreenElement) { container.requestFullscreen().catch(() => {}); } else { document.exitFullscreen(); } }
+function showCrosshair() {
+  if (crosshair) crosshair.style.display = "block";
+  if (canvas) canvas.style.cursor = "none";
+}
+
+function hideCrosshair() {
+  if (crosshair) crosshair.style.display = "none";
+  if (canvas) canvas.style.cursor = "default";
+}
+
+function toggleHelp() {
+  let help = document.getElementById("helpMenu");
+  help.style.display = help.style.display === "flex" ? "none" : "flex";
+}
+
+function showOptions() {
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("optionsMenu").style.display = "flex";
+}
+
+function closeOptions() {
+  document.getElementById("optionsMenu").style.display = "none";
+  document.getElementById("startScreen").style.display = "flex";
+}
+
+function closeHighscore() {
+  document.getElementById("highscoreMenu").style.display = "none";
+  document.getElementById("startScreen").style.display = "flex";
+  document.getElementById("highscoreNameDisplay").style.display = "block";
+}
+
+function exitGame() {
+  window.close();
+  alert("Das Spiel wird beendet. Bitte schließe den Tab.");
+  location.reload();
+}
+
+function toggleFullscreen() {
+  let container = document.getElementById("game-container");
+  if (!document.fullscreenElement) {
+    container.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
 
 function showHighscore() {
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("highscoreMenu").style.display = "flex";
   let list = getHighscores();
   let listHTML = '<ol style="padding-left: 20px; text-align: left;">';
-  list.forEach((entry) => { listHTML += `<li>${entry.name}: ${entry.score}</li>`; });
+  list.forEach((entry) => {
+    listHTML += `<li>${entry.name}: ${entry.score}</li>`;
+  });
   listHTML += "</ol>";
   document.getElementById("highscoreNameDisplay").style.display = "none";
   document.getElementById("highscoreValue").innerHTML = listHTML;

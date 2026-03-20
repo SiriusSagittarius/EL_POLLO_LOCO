@@ -87,13 +87,14 @@ class CollisionManager {
 
     if (enemy.isDead() && !this.world.bossDying) {
       this.world.bossDying = true;
-      setTimeout(() => {
-        enemy.stopIntervals();
-        this.world.enemies = this.world.enemies.filter((e) => e !== enemy);
-        this.world.score += 500;
-        this.world.checkHighscore();
-        this.world.gameWon();
-      }, 1000);
+      if (!enemy.playedDeathSound) {
+        enemy.dead_sound.play().catch(() => {});
+        enemy.playedDeathSound = true;
+      }
+      enemy.stopIntervals();
+      this.world.score += 500;
+      this.world.checkHighscore();
+      this.world.gameWon();
     }
   }
 
