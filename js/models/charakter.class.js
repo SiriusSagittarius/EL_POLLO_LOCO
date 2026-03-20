@@ -305,6 +305,10 @@ class Character extends MovableObject {
     }
   }
 
+  /**
+   * Löst die Uzi-Rundumschlag-Animation aus.
+   * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
+   */
   triggerUziWheelAnimation(deltaY) {
     if (this.isUziWheelUp || this.isUziWheelDown) return;
 
@@ -318,6 +322,9 @@ class Character extends MovableObject {
     }
   }
 
+  /**
+   * Lässt den Charakter rotieren (z.B. bei speziellen Ausweichmanövern).
+   */
   rotate() {
     if (!this.isRotating) {
       this.isRotating = true;
@@ -329,6 +336,9 @@ class Character extends MovableObject {
     }
   }
 
+  /**
+   * Schaltet den Flugmodus (Besen) an oder aus.
+   */
   toggleFlying() {
     this.isFlying = !this.isFlying;
     if (!this.isFlying) {
@@ -341,6 +351,9 @@ class Character extends MovableObject {
     }
   }
 
+  /**
+   * Führt einen schnellen Schuss mit der Uzi nach vorne aus.
+   */
   shootUziForward() {
     if (!this.isUziForward) {
       this.isUziForward = true;

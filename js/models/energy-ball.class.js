@@ -13,7 +13,7 @@ class EnergyBall extends MovableObject {
 
   shoot() {
     let speed = 15;
-    setInterval(() => {
+    this.setStoppableInterval(() => {
       if (this.otherDirection) {
         this.x -= speed;
       } else {

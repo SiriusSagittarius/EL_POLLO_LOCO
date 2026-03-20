@@ -13,7 +13,6 @@ class World {
   coins = [];
   salsaBottles = [];
   throwableObjects = [];
-  lastThrowTime = 0;
   backgroundObjects = [];
   energyBalls = [];
   statusBar = new StatusBar();
@@ -27,7 +26,6 @@ class World {
   bossSpawned = false;
   bossDying = false;
   isActive = true;
-  lastShootTime = 0;
   score = 0;
   highscore = 0;
   highscoreName = "Anonym";
@@ -35,11 +33,11 @@ class World {
   shake_x = 0;
   shake_y = 0;
   chickenFlashTime = 0;
-  flashImage = new Image();
-  bottleIcon = new Image();
 
   levelManager;
   collisionManager;
+  combatManager;
+  renderer;
 
   shotgun_sound = new Audio("audio/shotgun.mp3");
   chicken_dead_sound = new Audio("audio/chickenDead.mp3");
@@ -52,9 +50,6 @@ class World {
   chickenshot_sound = new Audio("audio/chickenshot.mp3");
 
   constructor(canvas, keyboard) {
-    this.flashImage.src =
-      "img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png";
-    this.bottleIcon.src = "img/6_salsa_bottle/1_salsa_bottle_on_ground.png";
     this.ctx = canvas.getContext("2d");
     this.canvas = canvas;
     this.keyboard = keyboard;
@@ -62,6 +57,8 @@ class World {
 
     this.levelManager = new LevelManager(this);
     this.collisionManager = new CollisionManager(this);
+    this.combatManager = new CombatManager(this);
+    this.renderer = new WorldRenderer(this, canvas);
 
     try {
       let storedList = JSON.parse(localStorage.getItem("highscoreList"));
@@ -80,7 +77,7 @@ class World {
     this.levelManager.updateClouds();
 
     this.setWorld();
-    this.draw();
+    this.renderer.draw();
     this.run();
     this.background_sound.loop = true;
     this.background_sound.currentTime = 0;
@@ -100,8 +97,8 @@ class World {
    */
   run() {
     this.runInterval = setInterval(() => {
-      this.checkShooting();
-      this.checkThrowing();
+      this.combatManager.checkShooting();
+      this.combatManager.checkThrowing();
       this.collisionManager.checkCollisions();
       this.levelManager.checkBossSpawn();
       this.checkExplosions();
@@ -195,249 +192,6 @@ class World {
     });
   }
 
-  checkShooting() {
-    if (!this.keyboard.D) return;
-
-    let currentTime = new Date().getTime();
-
-    if (this.character.isFlying && currentTime - this.lastShootTime > 100) {
-      this.fireGatling(currentTime);
-    } else if (!this.character.isFlying) {
-      let isUzi = this.character.currentWeapon === "uzi";
-      let cooldown = isUzi ? 100 : 200;
-
-      if (currentTime - this.lastShootTime > cooldown) {
-        if (isUzi) {
-          this.fireUzi(currentTime);
-        } else if (this.character.shoot()) {
-          this.fireShotgun(currentTime);
-        }
-      }
-    }
-  }
-
-  fireGatling(currentTime) {
-    this.lastShootTime = currentTime;
-    this.character.shoot();
-
-    let ammoImage = null;
-    let isChickenShot = false;
-
-    if (this.character.impaledChicken) {
-      this.character.shotsWithChicken++;
-      if (this.character.shotsWithChicken > 10) {
-        let imgPath =
-          this.character.IMPALED_CHICKEN_IMAGES[
-            this.character.shotsWithChicken % 2
-          ];
-        if (this.character.imageCache[imgPath])
-          ammoImage = this.character.imageCache[imgPath];
-        this.character.impaledChicken = false;
-        this.character.shotsWithChicken = 0;
-        isChickenShot = true;
-      }
-    }
-
-    let startX = this.character.otherDirection
-      ? this.character.x - 20
-      : this.character.x + 200;
-    let startY = this.character.y + 150;
-    let nearestEnemy = this.findNearestEnemy(startX, startY);
-    let spread = Math.random() * 20 - 10;
-
-    let sound;
-    if (this.character.impaledChicken || isChickenShot) {
-      sound = this.chickenshot_sound.cloneNode(true);
-      this.chickenFlashTime = new Date().getTime();
-    } else {
-      sound = this.gatling_sound.cloneNode(true);
-    }
-    sound.volume = this.volume;
-    sound.play().catch(() => {});
-
-    let bullet = new GatlingBullet(
-      startX,
-      startY,
-      this.character.otherDirection,
-      spread,
-      nearestEnemy,
-      this,
-      ammoImage,
-    );
-
-    if (isChickenShot) {
-      bullet.width = 60;
-      bullet.height = 60;
-      bullet.isSpinning = true;
-
-      for (let i = 0; i < 20; i++) {
-        let color =
-          Math.random() > 0.5
-            ? "rgba(255, 255, 255, 1)"
-            : "rgba(139, 69, 19, 1)";
-        this.particles.push(
-          new Particle(
-            startX + Math.random() * 40 - 20,
-            startY + Math.random() * 40 - 20,
-            color,
-          ),
-        );
-      }
-    }
-
-    this.bullets.push(bullet);
-    this.spawnShellCasing();
-  }
-
-  fireUzi(currentTime) {
-    this.lastShootTime = currentTime;
-    this.character.shootUziForward();
-
-    let sound = this.gatling_sound.cloneNode(true);
-    sound.volume = this.volume;
-    sound.play().catch(() => {});
-
-    let startX = this.character.otherDirection
-      ? this.character.x
-      : this.character.x + 100;
-    let startY = this.character.y + 140;
-    let nearestEnemy = this.findNearestEnemy(startX, startY);
-    let spread = Math.random() * 10 - 5;
-
-    this.bullets.push(
-      new GatlingBullet(
-        startX,
-        startY,
-        this.character.otherDirection,
-        spread,
-        nearestEnemy,
-        this,
-      ),
-    );
-    this.spawnShellCasing();
-  }
-
-  fireShotgun(currentTime) {
-    this.lastShootTime = currentTime;
-
-    let sound = this.shotgun_sound.cloneNode(true);
-    sound.volume = this.volume;
-    sound.play().catch(() => {});
-
-    let startX = this.character.otherDirection
-      ? this.character.x
-      : this.character.x + 80;
-    let startY = this.character.y + 150;
-    let nearestEnemy = this.findNearestEnemy(startX, startY);
-
-    this.bullets.push(
-      new Bullet(
-        startX,
-        startY,
-        this.character.otherDirection,
-        -20,
-        nearestEnemy,
-        this,
-      ),
-      new Bullet(
-        startX,
-        startY,
-        this.character.otherDirection,
-        -40,
-        nearestEnemy,
-        this,
-      ),
-      new Bullet(
-        startX,
-        startY,
-        this.character.otherDirection,
-        0,
-        nearestEnemy,
-        this,
-      ),
-    );
-    this.spawnShellCasing();
-  }
-
-  findNearestEnemy(startX, startY, maxDistance = 1000) {
-    let nearestEnemy = null;
-    let minDistance = maxDistance;
-    this.enemies.forEach((enemy) => {
-      if (!enemy.isDead()) {
-        let dx = enemy.x + enemy.width / 2 - startX;
-        let dy = enemy.y + enemy.height / 2 - startY;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestEnemy = enemy;
-        }
-      }
-    });
-    return nearestEnemy;
-  }
-
-  spawnShellCasing() {
-    this.casings.push(
-      new ShellCasing(
-        this.character.x + this.character.width / 2,
-        this.character.y + 140,
-        this.character.otherDirection,
-      ),
-    );
-  }
-
-  /**
-   * Überprüft, ob die Taste zum Werfen (S) gedrückt wurde und wirft eine Salsa-Flasche.
-   */
-  checkThrowing() {
-    if (this.keyboard.S && this.character.bottles > 0) {
-      let currentTime = new Date().getTime();
-      if (currentTime - this.lastThrowTime > 500) {
-        this.lastThrowTime = currentTime;
-        this.character.bottles--;
-
-        let startX = this.character.otherDirection
-          ? this.character.x - 20
-          : this.character.x + 50;
-        let bottle = new ThrowableBottle(
-          startX,
-          this.character.y + 100,
-          this.character.otherDirection,
-        );
-        bottle.world = this;
-        this.throwableObjects.push(bottle);
-      }
-    }
-  }
-
-  /**
-   * Löst den Uzi-Radangriff aus, bei dem Kugeln kreisförmig (360 Grad) verschossen werden.
-   * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
-   */
-  triggerUziWheelAttack(deltaY) {
-    if (this.character.isUziWheelUp || this.character.isUziWheelDown) return;
-    this.character.triggerUziWheelAnimation(deltaY);
-
-    let sound = this.gatling_sound.cloneNode(true);
-    sound.volume = this.volume;
-    sound.play().catch(() => {});
-
-    let startX = this.character.x + this.character.width / 2;
-    let startY = this.character.y + this.character.height / 2;
-    let numBullets = 16;
-
-    for (let i = 0; i < numBullets; i++) {
-      let angle = (i * (Math.PI * 2)) / numBullets;
-      let bullet = new GatlingBullet(startX, startY, false, 0, null, this);
-      bullet.speedX = Math.cos(angle) * 30;
-      bullet.speedY = Math.sin(angle) * 30;
-      if (bullet.speedX < 0) {
-        bullet.otherDirection = true;
-      }
-      this.bullets.push(bullet);
-    }
-  }
-
   /**
    * Sammelt eine Münze auf und füllt damit den Flugbesen-Treibstoff.
    * @param {number} index - Index der Münze im Welt-Array.
@@ -498,14 +252,23 @@ class World {
     });
   }
 
+  /**
+   * Bereinigt gelöschte oder abgelaufene Explosionen aus dem Array.
+   */
   checkExplosions() {
     this.explosions = this.explosions.filter((e) => !e.toDelete);
   }
 
+  /**
+   * Bereinigt gelöschte oder abgelaufene Patronenhülsen aus dem Array.
+   */
   checkCasings() {
     this.casings = this.casings.filter((casing) => !casing.toDelete);
   }
 
+  /**
+   * Aktualisiert und zeichnet Lauf-Partikel (Staub) am Boden und entfernt alte Partikel.
+   */
   checkParticles() {
     this.particles = this.particles.filter((p) => !p.toDelete);
 
@@ -521,12 +284,18 @@ class World {
     }
   }
 
+  /**
+   * Prüft kontinuierlich, ob der aktuelle Punktestand den Highscore übersteigt.
+   */
   checkHighscore() {
     if (this.score > this.highscore) {
       this.highscore = this.score;
     }
   }
 
+  /**
+   * Wird aufgerufen, wenn die HP des Charakters auf 0 fallen. Beendet den Game Loop.
+   */
   gameOver() {
     console.log("Game Over");
     clearInterval(this.runInterval);
@@ -535,10 +304,18 @@ class World {
     checkEndGame(this.score, false);
   }
 
+  /**
+   * Wird aufgerufen, wenn der Endboss stirbt. Beendet das Spiel als gewonnen.
+   */
   gameWon() {
     checkEndGame(this.score, true);
   }
 
+  /**
+   * Erzeugt einen Screen-Shake-Effekt (Wackeln der Kamera), z.B. bei einem Treffer des Bosses.
+   * @param {number} intensity - Stärke des Wackelns in Pixel.
+   * @param {number} duration - Dauer des Effekts in Millisekunden.
+   */
   shake(intensity, duration) {
     let interval = setInterval(() => {
       this.shake_x = Math.random() * intensity - intensity / 2;
@@ -790,6 +567,11 @@ class World {
       this.drawEnemyHealthBar(mo);
     }
   }
+
+  /**
+   * Zeichnet einen dynamischen Lebensbalken direkt über gewöhnlichen Feinden oder den großen Bossbalken.
+   * @param {MovableObject} mo - Das Gegner-Objekt.
+   */
   drawEnemyHealthBar(mo) {
     if (!this.ctx) return;
 
@@ -819,6 +601,10 @@ class World {
     }
   }
 
+  /**
+   * Spiegelt den Canvas horizontal, damit Objekte in die entgegengesetzte Richtung schauen.
+   * @param {MovableObject} mo - Das zu spiegelnde Objekt.
+   */
   flipImage(mo) {
     this.ctx.save();
     this.ctx.translate(mo.width, 0);
@@ -826,6 +612,10 @@ class World {
     mo.x = mo.x * -1;
   }
 
+  /**
+   * Setzt die Canvas-Spiegelung für nachfolgende Objekte zurück.
+   * @param {MovableObject} mo - Das zuvor gespiegelte Objekt.
+   */
   flipImageBack(mo) {
     mo.x = mo.x * -1;
     this.ctx.restore();

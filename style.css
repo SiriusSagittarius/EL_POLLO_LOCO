@@ -69,8 +69,9 @@ canvas {
 }
 
 #game-container:fullscreen {
-  width: 100% !important;
-  height: 100% !important;
+  max-width: calc(100vh * (720 / 480)) !important;
+  width: 100vw !important;
+  height: auto !important;
 }
 
 .loader {
@@ -245,8 +246,9 @@ canvas {
 
 .game-container {
   position: relative;
-  width: 720px;
-  height: 480px;
+  width: 100%;
+  max-width: min(720px, calc(100vh * (720 / 480)));
+  aspect-ratio: 720 / 480;
   margin: 0 auto;
 }
 

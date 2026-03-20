@@ -2,6 +2,9 @@
  * Übernimmt die gesamte Kollisionslogik zwischen dem Charakter, Gegnern, Projektilen und Items.
  */
 class CollisionManager {
+  /**
+   * @param {World} world - Referenz auf die Spielwelt.
+   */
   constructor(world) {
     this.world = world;
   }
@@ -16,6 +19,9 @@ class CollisionManager {
     this.checkCollectibles();
   }
 
+  /**
+   * Prüft, ob Projektile (Kugeln) Gegner treffen oder zu weit geflogen sind.
+   */
   checkBulletCollisions() {
     for (let i = this.world.bullets.length - 1; i >= 0; i--) {
       const bullet = this.world.bullets[i];
@@ -33,6 +39,9 @@ class CollisionManager {
     }
   }
 
+  /**
+   * Prüft, ob geworfene Flaschen einen Gegner treffen.
+   */
   checkBottleCollisions() {
     if (!this.world.throwableObjects) return;
     for (let i = this.world.throwableObjects.length - 1; i >= 0; i--) {
@@ -45,6 +54,11 @@ class CollisionManager {
     }
   }
 
+  /**
+   * Hilfsfunktion: Überprüft für ein bestimmtes Projektil, ob es einen Gegner trifft.
+   * @param {MovableObject} projectile - Die Kugel oder Flasche.
+   * @returns {boolean} True, wenn ein Treffer registriert wurde.
+   */
   checkProjectileHit(projectile) {
     for (let j = this.world.enemies.length - 1; j >= 0; j--) {
       const enemy = this.world.enemies[j];
@@ -61,6 +75,11 @@ class CollisionManager {
     return false;
   }
 
+  /**
+   * Verarbeitet einen Treffer beim Endboss (Schaden, Hit-Effekt, Sterben).
+   * @param {Endboss} enemy - Das Endboss-Objekt.
+   * @param {number} damage - Die Höhe des Schadens.
+   */
   handleBossHit(enemy, damage = 5) {
     enemy.hit(damage);
     this.world.shake(5, 100);
@@ -78,6 +97,11 @@ class CollisionManager {
     }
   }
 
+  /**
+   * Verarbeitet einen Treffer bei einem normalen Gegner.
+   * @param {MovableObject} enemy - Das getroffene Gegner-Objekt.
+   * @param {number} enemyIndex - Der Index des Gegners im Array.
+   */
   handleEnemyHit(enemy, enemyIndex) {
     let sound = this.world.chicken_dead_sound.cloneNode(true);
     sound.volume = this.world.volume;
@@ -89,6 +113,9 @@ class CollisionManager {
     this.world.enemies.splice(enemyIndex, 1);
   }
 
+  /**
+   * Prüft Kollisionen zwischen dem Hauptcharakter (Pepe) und Feinden.
+   */
   checkCharacterEnemyCollisions() {
     for (let i = this.world.enemies.length - 1; i >= 0; i--) {
       const enemy = this.world.enemies[i];
@@ -104,6 +131,7 @@ class CollisionManager {
         this.world.character.shotsWithChicken = 0;
         enemy.energy = 0;
         enemy.toDelete = true;
+        enemy.stopIntervals(); // GANZ WICHTIG FÜR DEN SPEICHER!
         this.world.enemies.splice(i, 1);
       } else if (
         !this.world.character.isFlying &&
@@ -133,6 +161,9 @@ class CollisionManager {
     }
   }
 
+  /**
+   * Überprüft, ob der Charakter einsammelbare Items berührt.
+   */
   checkCollectibles() {
     this.collectItems(
       this.world.coins,
@@ -157,6 +188,12 @@ class CollisionManager {
     );
   }
 
+  /**
+   * Allgemeine Hilfsfunktion zum Aufsammeln von Items.
+   * @param {MovableObject[]} items - Array der Items (z.B. Münzen, Flaschen).
+   * @param {Function} action - Die auszuführende Aktion beim Aufsammeln.
+   * @param {boolean} doSplice - True, wenn das Item aus dem Array gelöscht werden soll.
+   */
   collectItems(items, action, doSplice) {
     for (let i = items.length - 1; i >= 0; i--) {
       if (this.world.character.isColliding(items[i])) {

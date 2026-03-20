@@ -18,8 +18,11 @@ let menu_sound = new Audio("audio/menu.mp3");
 let background_sound = new Audio("audio/hauptspiel.wav");
 let mousePosition = { x: 0, y: 0 };
 
-let globalVolume = 0.5;
-let isMuted = false;
+let globalVolume =
+  localStorage.getItem("globalVolume") !== null
+    ? parseFloat(localStorage.getItem("globalVolume"))
+    : 0.5;
+let isMuted = localStorage.getItem("isMuted") === "true";
 let tempScore = 0;
 let gamePaused = false;
 let intervalIds = [];
@@ -81,6 +84,8 @@ function init() {
     .insertAdjacentHTML("beforeend", renderLoadingScreen());
   startPreloading();
 
+  updateVolumeUI();
+
   document.addEventListener("fullscreenchange", () => {
     let icons = [
       document.getElementById("fullscreenIcon"),
@@ -99,12 +104,18 @@ function init() {
 
   canvas.addEventListener("mousemove", (e) => {
     let rect = canvas.getBoundingClientRect();
-    mousePosition.x = e.clientX - rect.left;
-    mousePosition.y = e.clientY - rect.top;
+    let scaleX = canvas.width / rect.width;
+    let scaleY = canvas.height / rect.height;
+   
+    // Skalierte Koordinaten für die interne Spiellogik (immer 720x480)
+    mousePosition.x = (e.clientX - rect.left) * scaleX;
+    mousePosition.y = (e.clientY - rect.top) * scaleY;
 
     if (crosshair && crosshair.style.display === "block") {
-      crosshair.style.left = mousePosition.x - crosshair.offsetWidth / 2 + "px";
-      crosshair.style.top = mousePosition.y - crosshair.offsetHeight / 2 + "px";
+      let displayX = e.clientX - rect.left;
+      let displayY = e.clientY - rect.top;
+      crosshair.style.left = displayX - crosshair.offsetWidth / 2 + "px";
+      crosshair.style.top = displayY - crosshair.offsetHeight / 2 + "px";
     }
   });
 
@@ -141,11 +152,11 @@ function bindTouchEvents() {
     btn.addEventListener("touchstart", (e) => {
       e.preventDefault();
       keyboard[key] = true;
-    });
+    }, { passive: false });
     btn.addEventListener("touchend", (e) => {
       e.preventDefault();
       keyboard[key] = false;
-    });
+    }, { passive: false });
   };
 
   bindBtn("btnLeft", "LEFT");
@@ -160,7 +171,7 @@ function bindTouchEvents() {
     btn.addEventListener("touchstart", (e) => {
       e.preventDefault();
       action();
-    });
+    }, { passive: false });
   };
 
   bindAction("btnUzi", () => {
@@ -194,7 +205,7 @@ function bindTouchEvents() {
       if (world.character.isFlying) {
         world.character.triggerWheelAnimation(100);
       } else if (world.character.currentWeapon === "uzi") {
-        world.triggerUziWheelAttack(100);
+        world.combatManager.triggerUziWheelAttack(100);
       }
     }
   });
@@ -218,6 +229,7 @@ function startGame() {
 
 /**
  * Zeigt den Story-Textbildschirm an, bevor das Intro-Video und das Spiel starten.
+ * Pausiert das Spiel.
  */
 function showStoryScreen() {
   let container = document.getElementById("game-container");
@@ -568,6 +580,8 @@ function changeVolume(amount) {
 
   document.getElementById("volDisplay").innerText =
     Math.round(globalVolume * 100) + "%";
+  localStorage.setItem("globalVolume", globalVolume);
+  updateVolumeUI();
 
   let volOptions = document.getElementById("volDisplayOptions");
   if (volOptions) volOptions.innerText = Math.round(globalVolume * 100) + "%";
@@ -585,10 +599,28 @@ function changeVolume(amount) {
 function toggleMute() {
   isMuted = !isMuted;
   document.getElementById("muteBtn").innerText = isMuted ? "🔇" : "🔊";
+  localStorage.setItem("isMuted", isMuted);
+  updateVolumeUI();
   menu_sound.volume = isMuted ? 0 : globalVolume;
   if (world) {
     world.updateVolume(isMuted ? 0 : globalVolume);
   }
+}
+
+/**
+ * Aktualisiert die Anzeige der Lautstärke und Stummschaltung in den Menüs.
+ */
+function updateVolumeUI() {
+  let volText = Math.round(globalVolume * 100) + "%";
+
+  let volDisplay = document.getElementById("volDisplay");
+  if (volDisplay) volDisplay.innerText = volText;
+
+  let volOptions = document.getElementById("volDisplayOptions");
+  if (volOptions) volOptions.innerText = volText;
+
+  let muteBtn = document.getElementById("muteBtn");
+  if (muteBtn) muteBtn.innerText = isMuted ? "🔇" : "🔊";
 }
 
 /**
@@ -779,10 +811,10 @@ window.addEventListener("wheel", (e) => {
       world.character.triggerWheelAnimation(e.deltaY);
     } else if (world.character.currentWeapon === "uzi") {
       e.preventDefault();
-      world.triggerUziWheelAttack(e.deltaY);
+      world.combatManager.triggerUziWheelAttack(e.deltaY);
     }
   }
-});
+}, { passive: false });
 
 /**
  * Startet das Vorladen der wichtigsten Bilder, um Ruckler zu vermeiden.
@@ -839,16 +871,17 @@ function startPreloading() {
     "img/2_character_pepe/8_flying/wheelfire/4d.png",
     "img/2_character_pepe/8_flying/wheelfire/5d.png",
 
-    "img/2_character_pepe/6_shooting/uzi/wheel/01.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/02.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/03.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/04.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/05.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/06.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/07.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/08.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/09.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/10.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/00.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/01.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/02.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/03.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/04.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/05.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/1/06.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/2/1.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/2/2.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/2/3.png",
+    "img/2_character_pepe/6_shooting/uzi/wheel/2/4.png",
 
     "img/2_character_pepe/6_shooting/uzi/shotwalk/0.png",
     "img/2_character_pepe/6_shooting/uzi/shotwalk/1.png",

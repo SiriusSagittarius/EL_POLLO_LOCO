@@ -13,9 +13,7 @@ class LevelManager {
     this.spawnIntervalId = null;
     this.timerIntervalId = null;
 
-    this.lastBackgroundX = -1522;
     this.bgWidth = 1522;
-    this.lastCloudX = -500;
   }
 
   /**
@@ -106,89 +104,105 @@ class LevelManager {
   updateBackground() {
     if (!this.world.character) return;
 
-    while (this.lastBackgroundX < this.world.character.x + 2000) {
-      this.lastBackgroundX += this.bgWidth;
-      let x = this.lastBackgroundX;
-      let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
-      let imageNames = ["1.png", "2.png"];
-      let imageName = imageNames[relativeIndex];
+    let minX = this.world.character.x - 2000;
+    let maxX = this.world.character.x + 2000;
+    let startChunk = Math.floor(minX / this.bgWidth);
+    let endChunk = Math.floor(maxX / this.bgWidth);
 
-      let air = new BackgroundObject(
-        `img/5_background/layers/5_air/${imageName}`,
-        x,
-        0,
+    for (let i = startChunk; i <= endChunk; i++) {
+      let chunkX = i * this.bgWidth;
+      // Überprüfe, ob für dieses Segment (chunkX) bereits der Boden generiert wurde
+      let exists = this.world.backgroundObjects.some(
+        (bgo) => bgo.x === chunkX && bgo.parallaxFactor === 1 && bgo.y >= 380,
       );
-      air.width = this.bgWidth;
-      this.world.backgroundObjects.push(air);
 
-      let mountain = new BackgroundObject(
-        `img/5_background/layers/2_berge/${imageName}`,
-        x,
-        0.2,
-      );
-      mountain.width = this.bgWidth;
-      this.world.backgroundObjects.push(mountain);
-
-      let ground = new BackgroundObject(
-        `img/5_background/layers/1_boden/${imageName}`,
-        x,
-        1,
-      );
-      ground.width = this.bgWidth;
-      ground.y += 380;
-      this.world.backgroundObjects.push(ground);
-
-      let imageblume = [
-        "1.png",
-        "2.png",
-        "3.png",
-        "4.png",
-        "5.png",
-        "6.png",
-        "7.png",
-      ];
-      let cactusCount = 4 + Math.floor(Math.random() * 5);
-
-      for (let i = 0; i < cactusCount; i++) {
-        let randomImage =
-          imageblume[Math.floor(Math.random() * imageblume.length)];
-        let cactus = new BackgroundObject(
-          `img/5_background/layers/3_blum/${randomImage}`,
-          x + Math.random() * (this.bgWidth - 100),
-          1,
-        );
-
-        cactus.height = 60 + Math.random() * 180;
-        cactus.width = cactus.height * 1.2;
-        let randomBaseY = 380 + Math.random() * 80;
-        cactus.y = randomBaseY - cactus.height;
-        this.world.backgroundObjects.push(cactus);
+      if (!exists) {
+        this.spawnBackgroundChunk(chunkX);
       }
     }
 
     this.world.backgroundObjects = this.world.backgroundObjects.filter(
       (bgo) => {
-        const parallax =
-          bgo.parallaxFactor !== undefined ? bgo.parallaxFactor : 1;
-        const screenX = bgo.x + this.world.camera_x * parallax;
-        const keep = screenX + bgo.width > -200;
+        const keep = Math.abs(bgo.x - this.world.character.x) < 4000;
         if (!keep) bgo.stopIntervals();
         return keep;
       },
     );
   }
 
+  /**
+   * Erzeugt einen kompletten Hintergrund-Block (Himmel, Berge, Boden, Kakteen) an einer bestimmten X-Koordinate.
+   * @param {number} x - Die X-Position des neuen Blocks.
+   */
+  spawnBackgroundChunk(x) {
+    let relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
+    let imageNames = ["1.png", "2.png"];
+    let imageName = imageNames[relativeIndex];
+
+    let air = new BackgroundObject(
+      `img/5_background/layers/5_air/${imageName}`,
+      x,
+      0,
+    );
+    air.width = this.bgWidth;
+    this.world.backgroundObjects.push(air);
+
+    let mountain = new BackgroundObject(
+      `img/5_background/layers/2_berge/${imageName}`,
+      x,
+      0.2,
+    );
+    mountain.width = this.bgWidth;
+    this.world.backgroundObjects.push(mountain);
+
+    let ground = new BackgroundObject(
+      `img/5_background/layers/1_boden/${imageName}`,
+      x,
+      1,
+    );
+    ground.width = this.bgWidth;
+    ground.y += 380;
+    this.world.backgroundObjects.push(ground);
+
+    let imageblume = [
+      "1.png",
+      "2.png",
+      "3.png",
+      "4.png",
+      "5.png",
+      "6.png",
+      "7.png",
+    ];
+    let cactusCount = 4 + Math.floor(Math.random() * 5);
+
+    for (let i = 0; i < cactusCount; i++) {
+      let randomImage =
+        imageblume[Math.floor(Math.random() * imageblume.length)];
+      let cactus = new BackgroundObject(
+        `img/5_background/layers/3_blum/${randomImage}`,
+        x + Math.random() * (this.bgWidth - 100),
+        1,
+      );
+
+      cactus.height = 60 + Math.random() * 180;
+      cactus.width = cactus.height * 1.2;
+      let randomBaseY = 380 + Math.random() * 80;
+      cactus.y = randomBaseY - cactus.height;
+      this.world.backgroundObjects.push(cactus);
+    }
+  }
+
   updateClouds() {
     if (!this.world.character) return;
-    while (this.lastCloudX < this.world.character.x + 2000) {
-      this.lastCloudX += 500;
-      this.world.clouds.push(new Cloud(this.lastCloudX));
+    while (this.world.clouds.length < 10) {
+      let spawnX =
+        this.world.character.x +
+        (Math.random() < 0.5 ? -1500 : 1500) +
+        (Math.random() * 1000 - 500);
+      this.world.clouds.push(new Cloud(spawnX));
     }
     this.world.clouds = this.world.clouds.filter((cloud) => {
-      const parallax =
-        cloud.parallaxFactor !== undefined ? cloud.parallaxFactor : 1;
-      const screenX = cloud.x + this.world.camera_x * parallax;
-      const keep = screenX + cloud.width > -200;
+      const keep = Math.abs(cloud.x - this.world.character.x) < 4000;
       if (!keep) cloud.stopIntervals();
       return keep;
     });

@@ -1,3 +1,6 @@
+/**
+ * Repräsentiert den Endboss des Spiels.
+ */
 class Endboss extends MovableObject {
   height = 400;
   width = 250;
@@ -42,6 +45,9 @@ class Endboss extends MovableObject {
   dead_sound = new Audio("audio/boss_dead.mp3");
   playedDeathSound = false;
 
+  /**
+   * Initialisiert den Endboss.
+   */
   constructor() {
     super();
     this.loadImage(this.IMAGES_ALERT[0]);
@@ -50,6 +56,9 @@ class Endboss extends MovableObject {
     this.animate();
   }
 
+  /**
+   * Startet die Animations- und Bewegungsintervalle des Endbosses.
+   */
   animate() {
     this.setStoppableInterval(() => {
       if (
@@ -83,11 +92,18 @@ class Endboss extends MovableObject {
     }, 200);
   }
 
+  /**
+   * Aktualisiert die Spiellautstärke für die Effekte des Bosses.
+   * @param {number} volume - Lautstärkewert (0.0 bis 1.0).
+   */
   updateVolume(volume) {
     this.attack_sound.volume = volume;
     this.dead_sound.volume = volume;
   }
 
+  /**
+   * Bewegt den Endboss in Richtung des Spielers.
+   */
   moveTowardsPepe() {
     if (this.x > this.world.character.x) {
       this.x -= this.speed;
@@ -98,6 +114,10 @@ class Endboss extends MovableObject {
     }
   }
 
+  /**
+   * Prüft, ob der Spieler sich in Reichweite für einen Angriff befindet.
+   * @returns {boolean} True, wenn der Spieler nah genug ist.
+   */
   isPlayerClose() {
     if (!this.world || !this.world.character) return false;
     return Math.abs(this.x - this.world.character.x) < 900;

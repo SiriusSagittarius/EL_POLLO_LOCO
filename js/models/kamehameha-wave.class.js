@@ -25,7 +25,7 @@ class KamehamehaWave extends MovableObject {
 
   shoot() {
     let speed = 40;
-    setInterval(() => {
+    this.setStoppableInterval(() => {
       if (this.otherDirection) {
         this.x -= speed;
       } else {
@@ -35,7 +35,7 @@ class KamehamehaWave extends MovableObject {
   }
 
   animate() {
-    setInterval(() => {
+    this.setStoppableInterval(() => {
       this.playAnimation(this.IMAGES_SPLASH);
     }, 50);
   }
