@@ -158,7 +158,6 @@ class WorldRenderer {
       this.addToMap(this.world.endbossBar);
     }
 
-    // Draw "Wrong Way" message if applicable
     if (this.world.isShowingWrongWay) {
       this.ctx.save();
       this.ctx.font = "bold 40px sans-serif";

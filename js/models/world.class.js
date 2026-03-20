@@ -389,7 +389,7 @@ class World {
     if (this.isPushingBack) return;
 
     if (this.keyboard.LEFT && this.character.x < BACKWARD_LIMIT_X) {
-      this.backwardRunTime += deltaTime * 1000; // deltaTime ist in Sekunden
+      this.backwardRunTime += deltaTime * 1000; 
     } else {
       this.backwardRunTime = 0;
     }
