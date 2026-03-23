@@ -40,9 +40,6 @@ class WorldRenderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
 
-    this.flashImage = new Image();
-    this.flashImage.src =
-      "img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png";
     this.bottleIcon = new Image();
     this.bottleIcon.src = "img/6_salsa_bottle/1_salsa_bottle_on_ground.png";
   }
@@ -94,7 +91,6 @@ class WorldRenderer {
     this.drawParticles();
     this.drawObjects(this.world.coins);
     this.drawObjects(this.world.salsaBottles);
-    this.drawObjects(this.world.energyBalls);
   }
 
   /**
@@ -112,11 +108,28 @@ class WorldRenderer {
    */
   drawUI() {
     this.addToMap(this.world.statusBar);
+    this.drawHealthBarPercentage();
     this.addToMap(this.world.coinBar);
     this.drawScoreAndBottles();
     this.drawLevelInfo();
     if (this.world.isShowingWrongWay) this.drawWrongWayMessage();
-    this.drawIngameTip();
+  }
+
+  /**
+   * Zeichnet den prozentualen Lebenswert auf die Lebensleiste.
+   */
+  drawHealthBarPercentage() {
+    const healthPercentage = Math.round(this.world.character.energy);
+    const text = `${healthPercentage}%`;
+
+    this.ctx.font = "20px sans-serif";
+    this.ctx.fillStyle = "black";
+    this.ctx.textAlign = "center";
+
+    const bar = this.world.statusBar;
+    this.ctx.fillText(text, bar.x + bar.width / 2, bar.y + bar.height / 2 + 17);
+
+    this.ctx.textAlign = "start";
   }
 
   /**
@@ -124,44 +137,6 @@ class WorldRenderer {
    */
   updateCamera() {
     this.world.camera_x = -this.world.character.x + 100;
-  }
-
-  /**
-   * Zeichnet den In-Game-Tipp, falls er aktiv ist.
-   * @returns {void}
-   */
-  drawIngameTip() {
-    if (!this.world.showPepistolTip) return;
-
-    const tipText1 =
-      'Tipp: Durch die magischen Uzis verwandelt sich Pepe beim Schießen in "Pepistol".';
-    const tipText2 =
-      "Er vollführt wilde Aktionen, wenn man das Mausrad bewegt!";
-
-    this.ctx.save();
-
-   
-    this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-    const boxWidth = 600;
-    const boxHeight = 80;
-    const boxX = (this.canvas.width - boxWidth) / 2;
-    const boxY = this.canvas.height - boxHeight - 20;
-    this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-    
-    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-
-   
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "bold 16px sans-serif";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(tipText1, this.canvas.width / 2, boxY + 35);
-    this.ctx.font = "16px sans-serif";
-    this.ctx.fillText(tipText2, this.canvas.width / 2, boxY + 60);
-
-    this.ctx.restore();
   }
 
   /**
@@ -183,14 +158,19 @@ class WorldRenderer {
   drawObjectsWithParallax(objects) {
     objects.forEach((bgo) => {
       if (this.isVisible(bgo) &amp;&amp; bgo.img) {
-        const parallaxOffset = this.world.camera_x * (bgo.parallaxFactor - 1);
-        this.ctx.drawImage(
-          bgo.img,
-          bgo.x + parallaxOffset,
-          bgo.y,
-          bgo.width,
-          bgo.height,
-        );
+        const pFactor =
+          bgo.parallaxFactor !== undefined ? bgo.parallaxFactor : 1;
+        const parallaxOffset = this.world.camera_x * (pFactor - 1);
+
+        if (!isNaN(parallaxOffset) &amp;&amp; !isNaN(bgo.x)) {
+          this.ctx.drawImage(
+            bgo.img,
+            bgo.x + parallaxOffset,
+            bgo.y,
+            bgo.width,
+            bgo.height,
+          );
+        }
       }
     });
   }
@@ -223,21 +203,13 @@ class WorldRenderer {
   drawLevelInfo() {
     if (this.world.levelManager.bossSpawned) {
       this.addToMap(this.world.endbossBar);
-    } else {
-      this.ctx.font = "30px sans-serif";
-      this.ctx.textAlign = "center";
-      const time =
-        this.world.levelManager.maxLevelTime -
-        this.world.levelManager.levelTimer;
-      this.ctx.fillText(
-        `Level: ${this.world.levelManager.level} | Zeit: ${time}s`,
-        360,
-        50,
-      );
-      this.ctx.textAlign = "start";
     }
   }
 
+  /**
+   * Zeichnet eine Warnmeldung, wenn der Spieler in die falsche Richtung läuft.
+   * @returns {void}
+   */
   drawWrongWayMessage() {
     this.ctx.save();
     this.ctx.font = "bold 40px sans-serif";
@@ -283,34 +255,6 @@ class WorldRenderer {
       }
 
       this.ctx.rotate(mo.angle);
-
-      if (mo instanceof Character &amp;&amp; mo.impaledChicken) {
-        this.ctx.save();
-        this.ctx.translate(120, 1);
-
-        let isFlashing =
-          new Date().getTime() - this.world.chickenFlashTime &lt; 100;
-        if (isFlashing) this.ctx.filter = "brightness(200%)";
-
-        let chickenAnimIndex =
-          Math.floor(new Date().getTime() / 500) %
-          mo.IMPALED_CHICKEN_IMAGES.length;
-        let chickenImgPath = mo.IMPALED_CHICKEN_IMAGES[chickenAnimIndex];
-        let chickenImg = mo.imageCache[chickenImgPath];
-
-        if (chickenImg) {
-          this.ctx.save();
-          this.ctx.scale(-1, 1);
-          this.ctx.drawImage(chickenImg, -75, -75, 150, 150);
-          this.ctx.restore();
-        }
-        this.ctx.filter = "none";
-
-        if (isFlashing &amp;&amp; this.flashImage.complete) {
-          this.ctx.drawImage(this.flashImage, -40, -40, 80, 80);
-        }
-        this.ctx.restore();
-      }
     }
 
     try {
@@ -408,13 +352,13 @@ class WorldRenderer {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#createAndPlayVideo">createAndPlayVideo</a></li><li><a href="global.html#enterFullscreen">enterFullscreen</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndShowFinish">playOutroVideoAndShowFinish</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showFinishScreen">showFinishScreen</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#toggleTouchControls">toggleTouchControls</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li><li><a href="global.html#updateTouchToggleIcon">updateTouchToggleIcon</a></li><li><a href="global.html#updateVolumeUI">updateVolumeUI</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 21:03:36 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sun Mar 22 2026 23:40:46 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -37,9 +37,7 @@ let keyboard = {
   SPACE: false,
   D: false,
   F: false,
-  U: false,
   S: false,
-  B: false,
 };
 
 let menu_sound = new Audio("audio/menu.mp3");
@@ -51,10 +49,8 @@ let globalVolume =
     ? parseFloat(localStorage.getItem("globalVolume"))
     : 0.5;
 let isMuted = localStorage.getItem("isMuted") === "true";
-let tempScore = 0;
 let gamePaused = false;
 let intervalIds = [];
-let currentPlayerName = "Anonym";
 
 const originalSetInterval = window.setInterval;
 const originalClearInterval = window.clearInterval;
@@ -84,13 +80,18 @@ function init() {
     .getElementById("game-container")
     .insertAdjacentHTML("beforeend", renderOverlay());
 
-  if (isMobile()) {
-    document
-      .getElementById("game-container")
-      .insertAdjacentHTML("beforeend", renderTouchControls());
-  }
+  document
+    .getElementById("game-container")
+    .insertAdjacentHTML("beforeend", renderTouchControls());
+  // Hide controls initially, they will be shown when the game starts.
+  document.getElementById("touch-controls").style.display = "none";
 
   document.getElementById("overlay-container").innerHTML = renderAllScreens();
+
+  // Update the toggle icon based on the saved setting.
+  let touchEnabled = localStorage.getItem("touchControlsEnabled") !== "false";
+  updateTouchToggleIcon(touchEnabled);
+
   document
     .getElementById("overlay-container")
     .insertAdjacentHTML("beforeend", renderLoadingScreen());
@@ -130,9 +131,7 @@ function init() {
     }
   });
 
-  if (isMobile()) {
-    bindTouchEvents();
-  }
+  bindTouchEvents();
 
   menu_sound.loop = true;
   menu_sound.volume = isMuted ? 0 : globalVolume;
@@ -144,12 +143,82 @@ function init() {
 }
 
 /**
+ * Versucht, den Vollbildmodus zu aktivieren.
+ * Muss durch eine Benutzerinteraktion ausgelöst werden.
+ */
+function enterFullscreen() {
+  let elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen().catch((err) => {
+      console.error(
+        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
+      );
+    });
+  } else if (elem.webkitRequestFullscreen) {
+    /* Safari */
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) {
+    /* IE11 */
+    elem.msRequestFullscreen();
+  }
+}
+
+/**
+ * Schaltet die Sichtbarkeit der Touch-Steuerung um und speichert die Einstellung.
+ */
+function toggleTouchControls() {
+  // 1. Bestimmt den NEUEN Zustand, indem der aktuelle aus dem Speicher umgedreht wird.
+  let isCurrentlyEnabled =
+    localStorage.getItem("touchControlsEnabled") !== "false";
+  let newIsEnabled = !isCurrentlyEnabled;
+
+  // 2. Speichert den neuen Zustand.
+  localStorage.setItem("touchControlsEnabled", newIsEnabled);
+
+  // 3. Aktualisiert das Icon, um den neuen Zustand widerzuspiegeln.
+  updateTouchToggleIcon(newIsEnabled);
+
+  // 4. Wendet den neuen Zustand an (Sichtbarkeit nur ändern, wenn das Spiel gerade läuft).
+  const controls = document.getElementById("touch-controls");
+  const startScreen = document.getElementById("startScreen");
+  const isGameActive = startScreen &amp;&amp; startScreen.style.display === "none";
+
+  if (controls &amp;&amp; isGameActive) {
+    controls.style.display = newIsEnabled ? "flex" : "none";
+  }
+}
+
+/**
+ * Aktualisiert das Aussehen des Toggle-Buttons direkt über Inline-Styles.
+ * @param {boolean} isEnabled - Gibt an, ob die Steuerung aktiv ist.
+ */
+function updateTouchToggleIcon(isEnabled) {
+  const icons = document.querySelectorAll(".touch-toggle-btn");
+  icons.forEach((icon) => {
+    icon.title = isEnabled
+      ? "Touch-Steuerung ausblenden"
+      : "Touch-Steuerung einblenden";
+
+    // Direkte Anpassung ohne CSS-Klassen
+    icon.style.opacity = isEnabled ? "1" : "0.5";
+    icon.style.boxShadow = isEnabled ? "none" : "inset 0 0 0 3px red";
+  });
+
+  // Aktualisiert den neuen Text-Button im Einstellungsmenü
+  const textBtn = document.getElementById("touchToggleTextBtn");
+  if (textBtn) {
+    textBtn.innerText = isEnabled
+      ? "Touch-Steuerung: AN"
+      : "Touch-Steuerung: AUS";
+  }
+}
+
+/**
  * Startet das eigentliche Spiel (erstellt die World-Instanz).
  */
 function startGame() {
-  let inputName = document.getElementById("startNameInput").value;
-  if (inputName &amp;&amp; inputName.trim() !== "") {
-    currentPlayerName = inputName.trim();
+  if (isMobile()) {
+    enterFullscreen();
   }
 
   menu_sound.pause();
@@ -177,7 +246,6 @@ function startGameSequence() {
   clearAllIntervals();
   document.getElementById("gameOverScreen").style.display = "none";
   document.getElementById("winScreen").style.display = "none";
-  document.getElementById("newHighscoreMenu").style.display = "none";
   document.getElementById("btnMenu").style.display = "none";
   hideCrosshair();
 
@@ -187,43 +255,61 @@ function startGameSequence() {
       world = new World(canvas, keyboard);
       showCrosshair();
       world.updateVolume(isMuted ? 0 : globalVolume);
+
+      // Show touch controls if they are enabled
+      let touchEnabled =
+        localStorage.getItem("touchControlsEnabled") !== "false";
+      if (touchEnabled) {
+        document.getElementById("touch-controls").style.display = "flex";
+      }
       document.getElementById("btnMenu").style.display = "flex";
       console.log("Spiel neu gestartet!");
       gamePaused = false;
-
-      setTimeout(() => {
-        if (world &amp;&amp; world.isActive) {
-          world.showPepistolTip = true;
-          setTimeout(() => {
-            if (world) {
-              world.showPepistolTip = false;
-            }
-          }, 8000);
-        }
-      }, 2000);
     }
   });
 }
 
 /**
- * Löscht den Speicher außer dem Highscore und lädt die Seite neu.
+ * Prüft am Ende des Spiels und zeigt den entsprechenden Bildschirm.
+ */
+function checkEndGame(score, won) {
+  hideCrosshair();
+  document.getElementById("btnMenu").style.display = "none";
+  if (won) {
+    document.getElementById("winScreen").style.display = "flex";
+    if (typeof playOutroVideoAndShowFinish === "function") {
+      setTimeout(() => playOutroVideoAndShowFinish(), 3000);
+    }
+  } else {
+    let scoreElement = document.getElementById("gameOverScore");
+    if (scoreElement) scoreElement.innerText = "Score: " + score;
+    document.getElementById("gameOverScreen").style.display = "flex";
+  }
+}
+
+/**
+ * Lädt die Seite neu.
  */
 function finishGameAndReload() {
-  const highscore = localStorage.getItem("highscoreList");
-  localStorage.clear();
-  if (highscore) {
-    localStorage.setItem("highscoreList", highscore);
-  }
   location.reload();
 }
 
+/**
+ * Pausiert das Spiel und zeigt das Pausen- oder Optionsmenü an.
+ * @returns {void}
+ */
 function pauseGame() {
   if (world) {
     gamePaused = true;
     world.background_sound.pause();
-    if (world.character &amp;&amp; world.character.isFlying)
-      world.character.broom_sound.pause();
-    document.getElementById("pauseMenu").style.display = "flex";
+
+    document.getElementById("optionsMenu").style.display = "flex";
+    document.getElementById("optionsTitle").style.display = "none";
+    document.getElementById("optionsMenuBtn").style.display = "block";
+    document.getElementById("optionsCloseBtn").innerText = "Weiter spielen";
+    document.getElementById("optionsBgPepe").style.display = "none";
+    document.getElementById("optionsBgLaputa").style.display = "none";
+
     document.getElementById("btnMenu").style.display = "none";
   }
 }
@@ -235,9 +321,7 @@ function resumeGame() {
   if (world) {
     gamePaused = false;
     world.background_sound.play();
-    if (world.character &amp;&amp; world.character.isFlying)
-      world.character.broom_sound.play().catch(() => {});
-    document.getElementById("pauseMenu").style.display = "none";
+    document.getElementById("optionsMenu").style.display = "none";
     document.getElementById("btnMenu").style.display = "flex";
   }
 }
@@ -249,10 +333,14 @@ function backToMenu() {
   if (world) {
     world.stopGame();
   }
-  document.getElementById("pauseMenu").style.display = "none";
+  document.getElementById("optionsMenu").style.display = "none";
   document.getElementById("gameOverScreen").style.display = "none";
   document.getElementById("winScreen").style.display = "none";
   document.getElementById("startScreen").style.display = "flex";
+
+  // Hide touch controls when returning to the menu
+  document.getElementById("touch-controls").style.display = "none";
+
   document.getElementById("btnMenu").style.display = "none";
   clearAllIntervals();
   hideCrosshair();
@@ -277,13 +365,13 @@ function clearAllIntervals() {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="EnergyBall.html">EnergyBall</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="GatlingBullet.html">GatlingBullet</a></li><li><a href="KamehamehaWave.html">KamehamehaWave</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderHighscoreMenu">renderHighscoreMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderNewHighscoreMenu">renderNewHighscoreMenu</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#createAndPlayVideo">createAndPlayVideo</a></li><li><a href="global.html#enterFullscreen">enterFullscreen</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndShowFinish">playOutroVideoAndShowFinish</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showFinishScreen">showFinishScreen</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#toggleTouchControls">toggleTouchControls</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li><li><a href="global.html#updateTouchToggleIcon">updateTouchToggleIcon</a></li><li><a href="global.html#updateVolumeUI">updateVolumeUI</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Mar 20 2026 21:03:36 GMT+0100 (Mitteleuropäische Normalzeit)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sun Mar 22 2026 23:40:46 GMT+0100 (Mitteleuropäische Normalzeit)
 </footer>
 
 <script> prettyPrint(); </script>

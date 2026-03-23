@@ -13,11 +13,9 @@ function renderTouchControls() {
 
       <!-- Rechte Seite: Aktionen -->
       <div class="touch-right">
-        <button id="btnThrow" class="touch-btn-secondary">🌶️</button>
-        <button id="btnJump" class="touch-btn-primary">🔼</button>
-        <button id="btnShoot" class="touch-btn-primary">🎯</button>
-        <button id="btnCycleWeapon" class="touch-btn-secondary">🔫</button>
-        <button id="btnSpecial" class="touch-btn-secondary">✨</button>
+        <button id="btnThrow">🌶️</button>
+        <button id="btnShoot">🎯</button>
+        <button id="btnJump">🔼</button>
       </div>
     </div>
   `;

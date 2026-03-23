@@ -14,7 +14,7 @@ class MovableObject {
   energy = 100;
   lastHit = 0;
   speedY = 0;
-  acceleration = 1500; // pixels/second^2
+  acceleration = 1500;
   angle = 0;
   offset = {
     top: 0,
@@ -25,10 +25,6 @@ class MovableObject {
   intervalIds = [];
   animationTimer = 0;
   gravityEnabled = false;
-
-  /**
-   * Erzeugt eine Instanz eines beweglichen Objekts.
-   */
 
   /**
    * Lädt ein einzelnes Bild anhand des Dateipfads.
@@ -94,10 +90,10 @@ class MovableObject {
    * @param {number} deltaTime - The time since the last frame in seconds.
    */
   updateGravity(deltaTime) {
-    if ((this.isAboveGround() || this.speedY > 0) && !this.isFlying) {
+    if (this.isAboveGround() || this.speedY > 0) {
       this.y -= this.speedY * deltaTime;
       this.speedY -= this.acceleration * deltaTime;
-    } else if (!this.isFlying && this.y > 150) {
+    } else if (this.y > 150) {
       this.y = 150;
       this.speedY = 0;
     }

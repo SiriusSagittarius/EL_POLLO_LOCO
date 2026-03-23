@@ -9,9 +9,7 @@ let keyboard = {
   SPACE: false,
   D: false,
   F: false,
-  U: false,
   S: false,
-  B: false,
 };
 
 let menu_sound = new Audio("audio/menu.mp3");
@@ -23,10 +21,8 @@ let globalVolume =
     ? parseFloat(localStorage.getItem("globalVolume"))
     : 0.5;
 let isMuted = localStorage.getItem("isMuted") === "true";
-let tempScore = 0;
 let gamePaused = false;
 let intervalIds = [];
-let currentPlayerName = "Anonym";
 
 const originalSetInterval = window.setInterval;
 const originalClearInterval = window.clearInterval;
@@ -56,13 +52,18 @@ function init() {
     .getElementById("game-container")
     .insertAdjacentHTML("beforeend", renderOverlay());
 
-  if (isMobile()) {
-    document
-      .getElementById("game-container")
-      .insertAdjacentHTML("beforeend", renderTouchControls());
-  }
+  document
+    .getElementById("game-container")
+    .insertAdjacentHTML("beforeend", renderTouchControls());
+  // Hide controls initially, they will be shown when the game starts.
+  document.getElementById("touch-controls").style.display = "none";
 
   document.getElementById("overlay-container").innerHTML = renderAllScreens();
+
+  // Update the toggle icon based on the saved setting.
+  let touchEnabled = localStorage.getItem("touchControlsEnabled") !== "false";
+  updateTouchToggleIcon(touchEnabled);
+
   document
     .getElementById("overlay-container")
     .insertAdjacentHTML("beforeend", renderLoadingScreen());
@@ -102,9 +103,7 @@ function init() {
     }
   });
 
-  if (isMobile()) {
-    bindTouchEvents();
-  }
+  bindTouchEvents();
 
   menu_sound.loop = true;
   menu_sound.volume = isMuted ? 0 : globalVolume;
@@ -116,12 +115,82 @@ function init() {
 }
 
 /**
+ * Versucht, den Vollbildmodus zu aktivieren.
+ * Muss durch eine Benutzerinteraktion ausgelöst werden.
+ */
+function enterFullscreen() {
+  let elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen().catch((err) => {
+      console.error(
+        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
+      );
+    });
+  } else if (elem.webkitRequestFullscreen) {
+    /* Safari */
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) {
+    /* IE11 */
+    elem.msRequestFullscreen();
+  }
+}
+
+/**
+ * Schaltet die Sichtbarkeit der Touch-Steuerung um und speichert die Einstellung.
+ */
+function toggleTouchControls() {
+  // 1. Bestimmt den NEUEN Zustand, indem der aktuelle aus dem Speicher umgedreht wird.
+  let isCurrentlyEnabled =
+    localStorage.getItem("touchControlsEnabled") !== "false";
+  let newIsEnabled = !isCurrentlyEnabled;
+
+  // 2. Speichert den neuen Zustand.
+  localStorage.setItem("touchControlsEnabled", newIsEnabled);
+
+  // 3. Aktualisiert das Icon, um den neuen Zustand widerzuspiegeln.
+  updateTouchToggleIcon(newIsEnabled);
+
+  // 4. Wendet den neuen Zustand an (Sichtbarkeit nur ändern, wenn das Spiel gerade läuft).
+  const controls = document.getElementById("touch-controls");
+  const startScreen = document.getElementById("startScreen");
+  const isGameActive = startScreen && startScreen.style.display === "none";
+
+  if (controls && isGameActive) {
+    controls.style.display = newIsEnabled ? "flex" : "none";
+  }
+}
+
+/**
+ * Aktualisiert das Aussehen des Toggle-Buttons direkt über Inline-Styles.
+ * @param {boolean} isEnabled - Gibt an, ob die Steuerung aktiv ist.
+ */
+function updateTouchToggleIcon(isEnabled) {
+  const icons = document.querySelectorAll(".touch-toggle-btn");
+  icons.forEach((icon) => {
+    icon.title = isEnabled
+      ? "Touch-Steuerung ausblenden"
+      : "Touch-Steuerung einblenden";
+
+    // Direkte Anpassung ohne CSS-Klassen
+    icon.style.opacity = isEnabled ? "1" : "0.5";
+    icon.style.boxShadow = isEnabled ? "none" : "inset 0 0 0 3px red";
+  });
+
+  // Aktualisiert den neuen Text-Button im Einstellungsmenü
+  const textBtn = document.getElementById("touchToggleTextBtn");
+  if (textBtn) {
+    textBtn.innerText = isEnabled
+      ? "Touch-Steuerung: AN"
+      : "Touch-Steuerung: AUS";
+  }
+}
+
+/**
  * Startet das eigentliche Spiel (erstellt die World-Instanz).
  */
 function startGame() {
-  let inputName = document.getElementById("startNameInput").value;
-  if (inputName && inputName.trim() !== "") {
-    currentPlayerName = inputName.trim();
+  if (isMobile()) {
+    enterFullscreen();
   }
 
   menu_sound.pause();
@@ -149,7 +218,6 @@ function startGameSequence() {
   clearAllIntervals();
   document.getElementById("gameOverScreen").style.display = "none";
   document.getElementById("winScreen").style.display = "none";
-  document.getElementById("newHighscoreMenu").style.display = "none";
   document.getElementById("btnMenu").style.display = "none";
   hideCrosshair();
 
@@ -159,43 +227,61 @@ function startGameSequence() {
       world = new World(canvas, keyboard);
       showCrosshair();
       world.updateVolume(isMuted ? 0 : globalVolume);
+
+      // Show touch controls if they are enabled
+      let touchEnabled =
+        localStorage.getItem("touchControlsEnabled") !== "false";
+      if (touchEnabled) {
+        document.getElementById("touch-controls").style.display = "flex";
+      }
       document.getElementById("btnMenu").style.display = "flex";
       console.log("Spiel neu gestartet!");
       gamePaused = false;
-
-      setTimeout(() => {
-        if (world && world.isActive) {
-          world.showPepistolTip = true;
-          setTimeout(() => {
-            if (world) {
-              world.showPepistolTip = false;
-            }
-          }, 8000);
-        }
-      }, 2000);
     }
   });
 }
 
 /**
- * Löscht den Speicher außer dem Highscore und lädt die Seite neu.
+ * Prüft am Ende des Spiels und zeigt den entsprechenden Bildschirm.
+ */
+function checkEndGame(score, won) {
+  hideCrosshair();
+  document.getElementById("btnMenu").style.display = "none";
+  if (won) {
+    document.getElementById("winScreen").style.display = "flex";
+    if (typeof playOutroVideoAndShowFinish === "function") {
+      setTimeout(() => playOutroVideoAndShowFinish(), 3000);
+    }
+  } else {
+    let scoreElement = document.getElementById("gameOverScore");
+    if (scoreElement) scoreElement.innerText = "Score: " + score;
+    document.getElementById("gameOverScreen").style.display = "flex";
+  }
+}
+
+/**
+ * Lädt die Seite neu.
  */
 function finishGameAndReload() {
-  const highscore = localStorage.getItem("highscoreList");
-  localStorage.clear();
-  if (highscore) {
-    localStorage.setItem("highscoreList", highscore);
-  }
   location.reload();
 }
 
+/**
+ * Pausiert das Spiel und zeigt das Pausen- oder Optionsmenü an.
+ * @returns {void}
+ */
 function pauseGame() {
   if (world) {
     gamePaused = true;
     world.background_sound.pause();
-    if (world.character && world.character.isFlying)
-      world.character.broom_sound.pause();
-    document.getElementById("pauseMenu").style.display = "flex";
+
+    document.getElementById("optionsMenu").style.display = "flex";
+    document.getElementById("optionsTitle").style.display = "none";
+    document.getElementById("optionsMenuBtn").style.display = "block";
+    document.getElementById("optionsCloseBtn").innerText = "Weiter spielen";
+    document.getElementById("optionsBgPepe").style.display = "none";
+    document.getElementById("optionsBgLaputa").style.display = "none";
+
     document.getElementById("btnMenu").style.display = "none";
   }
 }
@@ -207,9 +293,7 @@ function resumeGame() {
   if (world) {
     gamePaused = false;
     world.background_sound.play();
-    if (world.character && world.character.isFlying)
-      world.character.broom_sound.play().catch(() => {});
-    document.getElementById("pauseMenu").style.display = "none";
+    document.getElementById("optionsMenu").style.display = "none";
     document.getElementById("btnMenu").style.display = "flex";
   }
 }
@@ -221,10 +305,14 @@ function backToMenu() {
   if (world) {
     world.stopGame();
   }
-  document.getElementById("pauseMenu").style.display = "none";
+  document.getElementById("optionsMenu").style.display = "none";
   document.getElementById("gameOverScreen").style.display = "none";
   document.getElementById("winScreen").style.display = "none";
   document.getElementById("startScreen").style.display = "flex";
+
+  // Hide touch controls when returning to the menu
+  document.getElementById("touch-controls").style.display = "none";
+
   document.getElementById("btnMenu").style.display = "none";
   clearAllIntervals();
   hideCrosshair();

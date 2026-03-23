@@ -9,13 +9,8 @@ function renderAllScreens() {
     (typeof renderFinishScreen === "function" ? renderFinishScreen() : "") +
     (typeof renderWinScreen === "function" ? renderWinScreen() : "") +
     (typeof renderPauseButton === "function" ? renderPauseButton() : "") +
-    (typeof renderPauseMenu === "function" ? renderPauseMenu() : "") +
     (typeof renderHelpMenu === "function" ? renderHelpMenu() : "") +
-    (typeof renderOptionsMenu === "function" ? renderOptionsMenu() : "") +
-    (typeof renderNewHighscoreMenu === "function"
-      ? renderNewHighscoreMenu()
-      : "") +
-    (typeof renderHighscoreMenu === "function" ? renderHighscoreMenu() : "")
+    (typeof renderOptionsMenu === "function" ? renderOptionsMenu() : "")
   );
 }
 

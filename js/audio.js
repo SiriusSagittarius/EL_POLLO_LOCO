@@ -1,5 +1,7 @@
 /**
  * Entsperrt ein Audio-Objekt durch stummes Anspielen beim Klick (wichtig für Safari/Mobile).
+ * @param {HTMLAudioElement} audio - Das Audio-Objekt, das entsperrt werden soll.
+ * @returns {void}
  */
 function unlockAudio(audio) {
   audio.volume = 0;
@@ -16,23 +18,25 @@ function unlockAudio(audio) {
 
 /**
  * Ändert die globale Lautstärke.
+ * @param {number} amount - Der Betrag, um den die Lautstärke geändert werden soll (positiv oder negativ).
+ * @returns {void}
  */
 function changeVolume(amount) {
   globalVolume += amount;
   if (globalVolume > 1) globalVolume = 1;
   if (globalVolume < 0) globalVolume = 0;
 
-  document.getElementById("volDisplay").innerText = Math.round(globalVolume * 100) + "%";
   localStorage.setItem("globalVolume", globalVolume);
   updateVolumeUI();
-
-  let volOptions = document.getElementById("volDisplayOptions");
-  if (volOptions) volOptions.innerText = Math.round(globalVolume * 100) + "%";
 
   menu_sound.volume = isMuted ? 0 : globalVolume;
   if (world && !isMuted) world.updateVolume(globalVolume);
 }
 
+/**
+ * Schaltet das Audio im Spiel stumm oder hebt die Stummschaltung auf.
+ * @returns {void}
+ */
 function toggleMute() {
   isMuted = !isMuted;
   document.getElementById("muteBtn").innerText = isMuted ? "🔇" : "🔊";
@@ -42,6 +46,10 @@ function toggleMute() {
   if (world) world.updateVolume(isMuted ? 0 : globalVolume);
 }
 
+/**
+ * Aktualisiert die Anzeige der Lautstärke in der Benutzeroberfläche.
+ * @returns {void}
+ */
 function updateVolumeUI() {
   let volText = Math.round(globalVolume * 100) + "%";
   let volDisplay = document.getElementById("volDisplay");

@@ -99,7 +99,6 @@ class CollisionManager {
       }
       enemy.stopIntervals();
       this.world.score += 500;
-      this.world.checkHighscore();
       this.world.gameWon();
     }
   }
@@ -115,7 +114,6 @@ class CollisionManager {
     sound.volume = this.world.volume;
     sound.play().catch(() => {});
     this.world.score += 20;
-    this.world.checkHighscore();
     enemy.energy = 0;
     enemy.stopIntervals();
     this.world.enemies.splice(enemyIndex, 1);
@@ -137,41 +135,39 @@ class CollisionManager {
     }
   }
 
+  /**
+   * Bewertet die Kollision zwischen dem Charakter und einem Gegner.
+   * @param {MovableObject} enemy - Das Gegner-Objekt.
+   * @param {number} i - Der Index des Gegners im Array.
+   * @returns {void}
+   */
   evaluateCharacterCollision(enemy, i) {
-    if (this.isImpaling(enemy)) {
-      this.handleImpale(enemy, i);
-    } else if (this.isStomping(enemy)) {
+    if (this.isStomping(enemy)) {
       this.handleStomp(enemy, i);
     } else if (this.canTakeDamage()) {
       this.handleDamage();
     }
   }
 
-  isImpaling(enemy) {
-    const char = this.world.character;
-    return (
-      char.isFlying &&
-      !char.impaledChicken &&
-      (enemy instanceof Chicken || enemy instanceof SmallChicken)
-    );
-  }
-
-  handleImpale(enemy, i) {
-    this.world.character.impaledChicken = true;
-    this.world.character.shotsWithChicken = 0;
-    enemy.energy = 0;
-    enemy.stopIntervals();
-    this.world.enemies.splice(i, 1);
-  }
-
+  /**
+   * Prüft, ob der Charakter von oben auf den Gegner springt.
+   * @param {MovableObject} enemy - Das Gegner-Objekt.
+   * @returns {boolean} True, wenn es ein Sprungangriff ist.
+   */
   isStomping(enemy) {
     const char = this.world.character;
-    const isFallingOnEnemy = char.speedY < 0 && !char.isFlying;
+    const isFallingOnEnemy = char.speedY < 0;
     const isVerticallyAligned =
       char.y + char.height - char.offset.bottom < enemy.y + enemy.height / 2;
     return isFallingOnEnemy && isVerticallyAligned;
   }
 
+  /**
+   * Verarbeitet einen erfolgreichen Sprungangriff auf einen Gegner.
+   * @param {MovableObject} enemy - Das Gegner-Objekt.
+   * @param {number} i - Der Index des Gegners.
+   * @returns {void}
+   */
   handleStomp(enemy, i) {
     if (enemy instanceof Endboss) {
       this.handleBossHit(enemy, 10);
@@ -181,11 +177,19 @@ class CollisionManager {
     this.world.character.jump();
   }
 
+  /**
+   * Prüft, ob der Charakter Schaden nehmen kann.
+   * @returns {boolean} True, wenn der Charakter verletzbar ist.
+   */
   canTakeDamage() {
     const char = this.world.character;
-    return !char.isFlying && !char.isHurt() && !char.isAboveGround();
+    return !char.isHurt() && !char.isAboveGround();
   }
 
+  /**
+   * Verarbeitet den erlittenen Schaden durch einen Gegner.
+   * @returns {void}
+   */
   handleDamage() {
     this.world.character.hit();
     this.world.statusBar.setPercentage(this.world.character.energy);
@@ -206,25 +210,23 @@ class CollisionManager {
       () => this.collectBottle(),
       true,
     );
-    this.collectItems(
-      this.world.energyBalls,
-      () => this.collectEnergyBall(),
-      true,
-    );
   }
 
+  /**
+   * Sammelt eine Münze auf.
+   * @param {number} index - Der Index der Münze.
+   * @returns {void}
+   */
   collectCoin(index) {
     this.world.collectCoin(index);
   }
 
+  /**
+   * Sammelt eine Flasche auf.
+   * @returns {void}
+   */
   collectBottle() {
     this.world.character.bottles++;
-  }
-
-  collectEnergyBall() {
-    const char = this.world.character;
-    char.energy = Math.min(char.energy + 20, 100);
-    this.world.statusBar.setPercentage(char.energy);
   }
 
   /**

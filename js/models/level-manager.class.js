@@ -32,22 +32,34 @@ class LevelManager {
     this.startSpawning();
   }
 
+  /**
+   * Startet den Timer des Levels.
+   * @returns {void}
+   */
   startTimer() {
     this.timerIntervalId = setInterval(() => {
       this.levelTimer++;
     }, 1000);
   }
 
+  /**
+   * Startet das Intervall zum Spawnen von Feinden.
+   * @returns {void}
+   */
   startSpawning() {
-    const spawnRate = this.level === 1 ? 800 : 400;
+    const spawnRate = this.level === 1 ? 3000 : 1500;
     this.spawnIntervalId = setInterval(() => {
       this.spawnEnemies();
       this.cleanupDistantEnemies();
     }, spawnRate);
   }
 
+  /**
+   * Spawnt neue Gegner in der Welt.
+   * @returns {void}
+   */
   spawnEnemies() {
-    const count = Math.random() < 0.3 ? 2 : 1;
+    const count = 1;
     for (let i = 0; i < count; i++) {
       const spawnX = this.world.character.x + 600 + Math.random() * 600;
       const enemy =
@@ -57,6 +69,10 @@ class LevelManager {
     }
   }
 
+  /**
+   * Entfernt Feinde, die zu weit vom Charakter entfernt sind.
+   * @returns {void}
+   */
   cleanupDistantEnemies() {
     this.world.enemies = this.world.enemies.filter((e) => {
       const keep = Math.abs(e.x - this.world.character.x) < 2000;
@@ -115,30 +131,65 @@ class LevelManager {
    * @returns {void}
    */
   updateBackground() {
-    if (!this.world.character) return;
+    if (!this.world.character || !this.world.canvas) return;
 
-    const windowCenter = this.world.character.x - 500;
+    const layers = [
+      {
+        path: "img/5_background/layers/3_third_layer/",
+        parallax: 0.2,
+        yOffset: 0,
+      },
+      {
+        path: "img/5_background/layers/2_second_layer/",
+        parallax: 0.5,
+        yOffset: 0,
+      },
+      {
+        path: "img/5_background/layers/1_first_layer/",
+        parallax: 1,
+        yOffset: 0,
+      },
+    ];
 
-    let minX = windowCenter - 2000;
-    let maxX = windowCenter + 2000;
-    let startChunk = Math.floor(minX / this.bgWidth);
-    let endChunk = Math.floor(maxX / this.bgWidth);
+    layers.forEach((layer) => {
+      let requiredMinX = -this.bgWidth - this.world.camera_x * layer.parallax;
+      let requiredMaxX =
+        this.world.canvas.width +
+        this.bgWidth -
+        this.world.camera_x * layer.parallax;
 
-    for (let i = startChunk; i <= endChunk; i++) {
-      let chunkX = i * this.bgWidth;
+      let startChunk = Math.floor(requiredMinX / this.bgWidth);
+      let endChunk = Math.floor(requiredMaxX / this.bgWidth);
 
-      let exists = this.world.backgroundObjects.some(
-        (bgo) => bgo.x === chunkX && bgo.parallaxFactor === 1 && bgo.y >= 380,
-      );
+      for (let i = startChunk; i <= endChunk; i++) {
+        let chunkX = i * this.bgWidth;
 
-      if (!exists) {
-        this.spawnBackgroundChunk(chunkX);
+        let exists = this.world.backgroundObjects.some(
+          (bgo) => bgo.x === chunkX && bgo.parallaxFactor === layer.parallax,
+        );
+
+        if (!exists) {
+          const imageName = this.getChunkImageName(chunkX);
+          const bgo = new BackgroundObject(
+            `${layer.path}${imageName}`,
+            chunkX,
+            layer.parallax,
+          );
+          bgo.width = this.bgWidth;
+          if (layer.yOffset) bgo.y += layer.yOffset;
+          this.world.backgroundObjects.push(bgo);
+        }
       }
-    }
+    });
 
     this.world.backgroundObjects = this.world.backgroundObjects.filter(
       (bgo) => {
-        const keep = Math.abs(bgo.x - windowCenter) < 4000;
+        const parallax =
+          bgo.parallaxFactor !== undefined ? bgo.parallaxFactor : 1;
+        const screenX = bgo.x + this.world.camera_x * parallax;
+        const keep =
+          screenX > -this.bgWidth * 2 &&
+          screenX < this.world.canvas.width + this.bgWidth * 2;
         if (!keep) bgo.stopIntervals();
         return keep;
       },
@@ -146,66 +197,13 @@ class LevelManager {
   }
 
   /**
-   * Erzeugt einen kompletten Hintergrund-Block (Himmel, Berge, Boden, Kakteen) an einer bestimmten X-Koordinate.
-   * @param {number} x - Die X-Position des neuen Blocks.
-   * @returns {void}
+   * Gibt den Dateinamen des Hintergrundbilds basierend auf der X-Position zurück.
+   * @param {number} x - Die X-Koordinate.
+   * @returns {string} Der Dateiname des Bildes.
    */
-  spawnBackgroundChunk(x) {
-    const imageName = this.getChunkImageName(x);
-    this.spawnLayer(x, `img/5_background/layers/5_air/${imageName}`, 0);
-    this.spawnLayer(x, `img/5_background/layers/2_berge/${imageName}`, 0.2);
-    this.spawnGroundLayer(x, `img/5_background/layers/1_boden/${imageName}`);
-    this.spawnCacti(x);
-  }
-
   getChunkImageName(x) {
     const relativeIndex = Math.abs(Math.round(x / this.bgWidth)) % 2;
     return ["1.png", "2.png"][relativeIndex];
-  }
-
-  spawnLayer(x, path, parallax) {
-    const layer = new BackgroundObject(path, x, parallax);
-    layer.width = this.bgWidth;
-    this.world.backgroundObjects.push(layer);
-  }
-
-  spawnGroundLayer(x, path) {
-    const ground = new BackgroundObject(path, x, 1);
-    ground.width = this.bgWidth;
-    ground.y += 380;
-    this.world.backgroundObjects.push(ground);
-  }
-
-  spawnCacti(x) {
-    const imageblume = [
-      "1.png",
-      "2.png",
-      "3.png",
-      "4.png",
-      "5.png",
-      "6.png",
-      "7.png",
-    ];
-    const cactusCount = 2 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < cactusCount; i++) {
-      const randomImage =
-        imageblume[Math.floor(Math.random() * imageblume.length)];
-      const cactusX = x + Math.random() * (this.bgWidth - 100);
-      const cactus = new BackgroundObject(
-        `img/5_background/layers/3_blum/${randomImage}`,
-        cactusX,
-        1,
-      );
-      this.configureCactus(cactus);
-      this.world.backgroundObjects.push(cactus);
-    }
-  }
-
-  configureCactus(cactus) {
-    cactus.height = 60 + Math.random() * 180;
-    cactus.width = cactus.height * 1.2;
-    const randomBaseY = 380 + Math.random() * 80;
-    cactus.y = randomBaseY - cactus.height;
   }
 
   /**
@@ -213,16 +211,25 @@ class LevelManager {
    * @returns {void}
    */
   updateClouds() {
-    if (!this.world.character) return;
-    while (this.world.clouds.length < 10) {
-      let spawnX =
-        this.world.character.x +
-        (Math.random() < 0.5 ? -1500 : 1500) +
-        (Math.random() * 1000 - 500);
+    if (!this.world.character || !this.world.canvas) return;
+
+    if (this.world.clouds.length === 0) {
+      for (let i = 0; i < 6; i++) {
+        let targetScreenX = Math.random() * this.world.canvas.width;
+        let spawnX = targetScreenX - this.world.camera_x * 0.15;
+        this.world.clouds.push(new Cloud(spawnX));
+      }
+    }
+
+    while (this.world.clouds.length < 8) {
+      let targetScreenX = this.world.canvas.width + 100 + Math.random() * 800;
+      let spawnX = targetScreenX - this.world.camera_x * 0.15;
       this.world.clouds.push(new Cloud(spawnX));
     }
+
     this.world.clouds = this.world.clouds.filter((cloud) => {
-      const keep = Math.abs(cloud.x - this.world.character.x) < 4000;
+      const screenX = cloud.x + this.world.camera_x * cloud.parallaxFactor;
+      const keep = screenX > -1000 && screenX < this.world.canvas.width + 2000;
       if (!keep) cloud.stopIntervals();
       return keep;
     });

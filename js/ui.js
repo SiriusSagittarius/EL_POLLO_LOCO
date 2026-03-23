@@ -1,3 +1,7 @@
+/**
+ * Zeigt den Story-Bildschirm an.
+ * @returns {void}
+ */
 function showStoryScreen() {
   let container = document.getElementById("game-container");
   let storyScreen = document.getElementById("storyScreen");
@@ -54,6 +58,11 @@ Pepe wusste, was das bedeutete. Das Oberhuhn wollte sie in seinen Harem aus Sing
   }
 }
 
+/**
+ * Spielt das Intro-Video ab.
+ * @param {Function} onComplete - Callback-Funktion, die aufgerufen wird, wenn das Video beendet ist.
+ * @returns {void}
+ */
 function playIntroVideo(onComplete) {
   createAndPlayVideo(
     "introVideo",
@@ -64,11 +73,20 @@ function playIntroVideo(onComplete) {
   );
 }
 
+/**
+ * Spielt das Outro-Video ab und zeigt anschließend den Finish-Bildschirm an.
+ * @returns {void}
+ */
 function playOutroVideoAndShowFinish() {
   document.getElementById("winScreen").style.display = "none";
   playOutroVideo(() => showFinishScreen());
 }
 
+/**
+ * Spielt das Outro-Video ab.
+ * @param {Function} onComplete - Callback-Funktion, die aufgerufen wird, wenn das Video beendet ist.
+ * @returns {void}
+ */
 function playOutroVideo(onComplete) {
   if (world && world.background_sound) world.background_sound.pause();
   createAndPlayVideo(
@@ -80,6 +98,14 @@ function playOutroVideo(onComplete) {
   );
 }
 
+/**
+ * Erstellt ein Video-Element und spielt es ab.
+ * @param {string} videoId - Die ID des Video-Elements.
+ * @param {string} src - Der Dateipfad zum Video.
+ * @param {string} skipText - Der Text für den Überspringen-Button.
+ * @param {number} zIndex - Der z-Index des Videos.
+ * @param {Function} onComplete - Callback-Funktion, die aufgerufen wird, wenn das Video beendet ist.
+ */
 function createAndPlayVideo(videoId, src, skipText, zIndex, onComplete) {
   let container = document.getElementById("game-container");
   let video = document.getElementById(videoId);
@@ -153,16 +179,28 @@ function createAndPlayVideo(videoId, src, skipText, zIndex, onComplete) {
   video.play().catch((e) => finishVideo());
 }
 
+/**
+ * Zeigt das Fadenkreuz an und versteckt den Mauszeiger.
+ * @returns {void}
+ */
 function showCrosshair() {
   if (crosshair) crosshair.style.display = "block";
   if (canvas) canvas.style.cursor = "none";
 }
 
+/**
+ * Versteckt das Fadenkreuz und zeigt den Mauszeiger an.
+ * @returns {void}
+ */
 function hideCrosshair() {
   if (crosshair) crosshair.style.display = "none";
   if (canvas) canvas.style.cursor = "default";
 }
 
+/**
+ * Zeigt den "Finish"-Bildschirm an.
+ * @returns {void}
+ */
 function showFinishScreen() {
   let finishScreen = document.getElementById("finishScreen");
   if (finishScreen) {
@@ -170,33 +208,59 @@ function showFinishScreen() {
   }
 }
 
+/**
+ * Schaltet die Anzeige des Hilfemenüs um.
+ * @returns {void}
+ */
 function toggleHelp() {
   let help = document.getElementById("helpMenu");
   help.style.display = help.style.display === "flex" ? "none" : "flex";
 }
 
+/**
+ * Zeigt das Optionsmenü an.
+ * @returns {void}
+ */
 function showOptions() {
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("optionsMenu").style.display = "flex";
+  document.getElementById("optionsTitle").style.display = "block";
+  document.getElementById("optionsTitle").innerText = "Einstellungen";
+  document.getElementById("optionsMenuBtn").style.display = "none";
+  document.getElementById("optionsCloseBtn").innerText = "Zurück";
+  if (document.getElementById("optionsBgPepe"))
+    document.getElementById("optionsBgPepe").style.display = "block";
+  if (document.getElementById("optionsBgLaputa"))
+    document.getElementById("optionsBgLaputa").style.display = "block";
 }
 
+/**
+ * Schließt das Optionsmenü.
+ * @returns {void}
+ */
 function closeOptions() {
   document.getElementById("optionsMenu").style.display = "none";
-  document.getElementById("startScreen").style.display = "flex";
+  if (typeof gamePaused !== "undefined" && gamePaused) {
+    resumeGame();
+  } else {
+    document.getElementById("startScreen").style.display = "flex";
+  }
 }
 
-function closeHighscore() {
-  document.getElementById("highscoreMenu").style.display = "none";
-  document.getElementById("startScreen").style.display = "flex";
-  document.getElementById("highscoreNameDisplay").style.display = "block";
-}
-
+/**
+ * Beendet das Spiel und schließt den Tab (sofern möglich).
+ * @returns {void}
+ */
 function exitGame() {
   window.close();
   alert("Das Spiel wird beendet. Bitte schließe den Tab.");
   location.reload();
 }
 
+/**
+ * Schaltet zwischen Vollbild und Fenstermodus um.
+ * @returns {void}
+ */
 function toggleFullscreen() {
   let container = document.getElementById("game-container");
   if (!document.fullscreenElement) {
@@ -204,17 +268,4 @@ function toggleFullscreen() {
   } else {
     document.exitFullscreen();
   }
-}
-
-function showHighscore() {
-  document.getElementById("startScreen").style.display = "none";
-  document.getElementById("highscoreMenu").style.display = "flex";
-  let list = getHighscores();
-  let listHTML = '<ol style="padding-left: 20px; text-align: left;">';
-  list.forEach((entry) => {
-    listHTML += `<li>${entry.name}: ${entry.score}</li>`;
-  });
-  listHTML += "</ol>";
-  document.getElementById("highscoreNameDisplay").style.display = "none";
-  document.getElementById("highscoreValue").innerHTML = listHTML;
 }

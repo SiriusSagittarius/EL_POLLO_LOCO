@@ -25,7 +25,7 @@ class ThrowableBottle extends MovableObject {
     this.height = 70;
     this.otherDirection = direction;
     this.gravityEnabled = true;
-    this.speedY = 500; 
+    this.speedY = 500;
   }
 
   /**
@@ -33,21 +33,30 @@ class ThrowableBottle extends MovableObject {
    * @param {number} deltaTime - Time since last frame.
    */
   update(deltaTime) {
-    super.update(deltaTime); 
+    super.update(deltaTime);
     this.updateMovement(deltaTime);
     this.updateAnimation(deltaTime);
   }
 
+  /**
+   * Aktualisiert die horizontale Bewegung der Flasche.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   * @returns {void}
+   */
   updateMovement(deltaTime) {
-    const horizontalSpeed = 300; 
+    const horizontalSpeed = 300;
     this.x +=
       (this.otherDirection ? -horizontalSpeed : horizontalSpeed) * deltaTime;
   }
 
+  /**
+   * Aktualisiert die Rotations-Animation der Flasche.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
+   * @returns {void}
+   */
   updateAnimation(deltaTime) {
     this.animationTimer += deltaTime;
     if (this.animationTimer > 1 / 25) {
-      
       this.playAnimation(this.IMAGES_ROTATION);
       this.animationTimer = 0;
     }

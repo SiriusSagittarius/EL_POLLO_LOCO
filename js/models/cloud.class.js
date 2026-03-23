@@ -10,10 +10,10 @@ class Cloud extends MovableObject {
   parallaxFactor = 0.15;
   speed = 0.15;
 
+  /**
+   * @param {number} x - Die anfängliche X-Position der Wolke.
+   */
   constructor(x) {
-    /**
-     * @param {number} x - Die anfängliche X-Position der Wolke.
-     */
     super();
     let randomImage = Math.random() < 0.5 ? "1.png" : "2.png";
     this.loadImage(`img/5_background/layers/4_clouds/${randomImage}`);

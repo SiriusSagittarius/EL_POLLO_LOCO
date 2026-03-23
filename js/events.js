@@ -1,29 +1,38 @@
+/**
+ * Überprüft, ob das aktuelle Gerät ein mobiles Gerät ist.
+ * @returns {boolean} True, wenn ein mobiles Gerät erkannt wird.
+ */
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent,
   );
 }
 
+/**
+ * Bindet die Touch-Events an die Buttons der mobilen Steuerung.
+ * @returns {void}
+ */
 function bindTouchEvents() {
   const bindBtn = (id, key) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.addEventListener(
-      "touchstart",
-      (e) => {
-        e.preventDefault();
-        keyboard[key] = true;
-      },
-      { passive: false },
-    );
-    btn.addEventListener(
-      "touchend",
-      (e) => {
-        e.preventDefault();
-        keyboard[key] = false;
-      },
-      { passive: false },
-    );
+
+    const press = (e) => {
+      e.preventDefault();
+      keyboard[key] = true;
+    };
+
+    const release = (e) => {
+      e.preventDefault();
+      keyboard[key] = false;
+    };
+
+    btn.addEventListener("touchstart", press, { passive: false });
+    btn.addEventListener("mousedown", press);
+
+    btn.addEventListener("touchend", release, { passive: false });
+    btn.addEventListener("mouseup", release);
+    btn.addEventListener("mouseleave", release);
   };
 
   bindBtn("btnLeft", "LEFT");
@@ -31,35 +40,6 @@ function bindTouchEvents() {
   bindBtn("btnJump", "SPACE");
   bindBtn("btnShoot", "D");
   bindBtn("btnThrow", "S");
-
-  const bindAction = (id, action) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.addEventListener(
-      "touchstart",
-      (e) => {
-        e.preventDefault();
-        action();
-      },
-      { passive: false },
-    );
-  };
-
-  bindAction("btnCycleWeapon", () => {
-    if (world && world.character) {
-      world.character.cycleWeapon();
-    }
-  });
-  bindAction("btnSpecial", () => {
-    if (world && world.character) {
-      if (world.character.isFlying) {
-        
-        world.character.triggerWheelAnimation(-1);
-      } else if (world.character.currentWeapon === "uzi") {
-        world.combatManager.triggerUziWheelAttack(-1);
-      }
-    }
-  });
 }
 
 window.addEventListener("keydown", (e) => {
@@ -72,32 +52,9 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyF") keyboard.F = true;
   if (e.code === "KeyS") keyboard.S = true;
 
-  if (e.code === "KeyB") {
-    if (world && world.character) {
-      if (world.character.isFlying) {
-        world.character.toggleFlying();
-        world.character.currentWeapon = "shotgun";
-      } else if (world.coinBar.percentage > 0) {
-        world.character.currentWeapon = "broom";
-        world.character.toggleFlying();
-      }
-    }
-  }
-  if (e.code === "KeyU") {
-    if (world && world.character) {
-      world.character.currentWeapon = "uzi";
-      if (world.character.isFlying) world.character.toggleFlying();
-    }
-  }
-  if (e.code === "KeyW") {
-    if (world && world.character) {
-      world.character.currentWeapon = "shotgun";
-      if (world.character.isFlying) world.character.toggleFlying();
-    }
-  }
   if (e.code === "Escape" || e.code === "KeyP") {
     if (world) {
-      if (document.getElementById("pauseMenu").style.display === "flex") {
+      if (document.getElementById("optionsMenu").style.display === "flex") {
         resumeGame();
       } else {
         pauseGame();
@@ -130,19 +87,3 @@ window.addEventListener("mouseup", (e) => {
 window.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
-
-window.addEventListener(
-  "wheel",
-  (e) => {
-    if (world && world.character) {
-      if (world.character.isFlying) {
-        e.preventDefault();
-        world.character.triggerWheelAnimation(e.deltaY);
-      } else if (world.character.currentWeapon === "uzi") {
-        e.preventDefault();
-        world.combatManager.triggerUziWheelAttack(e.deltaY);
-      }
-    }
-  },
-  { passive: false },
-);

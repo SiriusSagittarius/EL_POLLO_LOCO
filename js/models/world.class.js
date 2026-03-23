@@ -15,7 +15,6 @@ class World {
   salsaBottles = [];
   throwableObjects = [];
   backgroundObjects = [];
-  energyBalls = [];
   statusBar = new StatusBar();
   coinBar = new CoinBar();
   endbossBar = new EndbossBar();
@@ -28,16 +27,12 @@ class World {
   bossDying = false;
   isActive = true;
   score = 0;
-  highscore = 0;
-  highscoreName = "Anonym";
   volume = 1;
   shake_x = 0;
   shake_y = 0;
-  chickenFlashTime = 0;
   isShowingWrongWay = false;
   isPushingBack = false;
   backwardRunTime = 0;
-  showPepistolTip = false;
 
   levelManager;
   collisionManager;
@@ -51,8 +46,6 @@ class World {
       ? background_sound
       : new Audio("audio/hauptspiel.wav");
   coin_sound = new Audio("audio/coin.mp3");
-  gatling_sound = new Audio("audio/gatlinggun.mp3");
-  chickenshot_sound = new Audio("audio/chickenshot.mp3");
 
   /**
    * @param {HTMLCanvasElement} canvas - Das Canvas-Element, auf dem das Spiel gezeichnet wird.
@@ -64,11 +57,14 @@ class World {
     this.keyboard = keyboard;
     this.character = new Character();
     this.initComponents();
-    this.loadHighscore();
     this.initLevel();
     this.startGameLoop();
   }
 
+  /**
+   * Initialisiert die verschiedenen Manager-Komponenten.
+   * @returns {void}
+   */
   initComponents() {
     this.levelManager = new LevelManager(this);
     this.collisionManager = new CollisionManager(this);
@@ -76,18 +72,10 @@ class World {
     this.renderer = new WorldRenderer(this, this.canvas);
   }
 
-  loadHighscore() {
-    try {
-      let storedList = JSON.parse(localStorage.getItem("highscoreList"));
-      if (storedList && Array.isArray(storedList) && storedList.length > 0) {
-        this.highscore = storedList[0].score;
-        this.highscoreName = storedList[0].name;
-      }
-    } catch (e) {
-      console.log("No highscores yet or format change.");
-    }
-  }
-
+  /**
+   * Initialisiert das Level und spawnt Objekte.
+   * @returns {void}
+   */
   initLevel() {
     this.levelManager.startLevelLogic();
     this.levelManager.spawnCoins();
@@ -96,9 +84,13 @@ class World {
     this.levelManager.updateClouds();
   }
 
+  /**
+   * Startet die Game-Loop und die Hintergrundmusik.
+   * @returns {void}
+   */
   startGameLoop() {
     this.setWorld();
-    this.gameLoop(0); // Startet die neue, optimierte Spielschleife
+    this.gameLoop(0);
     this.background_sound.loop = true;
     this.background_sound.currentTime = 0;
     this.background_sound.play().catch(() => {});
@@ -111,17 +103,19 @@ class World {
   gameLoop(timestamp) {
     if (!this.isActive) return;
 
-    // Berechnet die Zeit, die seit dem letzten Frame vergangen ist (in Sekunden).
+    if (gamePaused) {
+      this.lastTime = timestamp;
+      this.renderer.draw();
+      requestAnimationFrame(this.gameLoop.bind(this));
+      return;
+    }
+
     const deltaTime = (timestamp - this.lastTime) / 1000;
     this.lastTime = timestamp;
-
-    // 1. Alle Logik-Updates durchführen
     this.updateLogic(deltaTime);
 
-    // 2. Alle Objekte auf dem Canvas zeichnen
     this.renderer.draw();
 
-    // Den nächsten Frame anfordern
     requestAnimationFrame(this.gameLoop.bind(this));
   }
 
@@ -130,7 +124,6 @@ class World {
    * @param {number} deltaTime - Die vergangene Zeit seit dem letzten Frame.
    */
   updateLogic(deltaTime) {
-    // Update all movable objects
     this.character.update(deltaTime);
     this.enemies.forEach((e) => e.update(deltaTime));
     this.clouds.forEach((c) => c.update(deltaTime));
@@ -146,12 +139,9 @@ class World {
     this.levelManager.checkBossSpawn();
     this.levelManager.updateBackground();
     this.levelManager.updateClouds();
-    this.updateCharacterAngle();
-    this.updateFuel();
     this.cleanupResources();
     this.handleBackwardMovement(deltaTime);
 
-    // Cleanup needs to happen after updates
     this.checkExplosions();
     this.checkCasings();
     this.checkParticles();
@@ -174,9 +164,7 @@ class World {
     this.levelManager.stop();
     this.background_sound.pause();
     this.character.stopIntervals();
-    this.character.broom_sound.pause();
 
-    // Stop all enemy sounds
     this.enemies.forEach((enemy) => {
       if (enemy instanceof Endboss) {
         enemy.attack_sound.pause();
@@ -184,66 +172,6 @@ class World {
       }
     });
     this.isActive = false;
-  }
-
-  /**
-   * Aktualisiert den Treibstoff (Münzleiste) während des Fliegens.
-   * @returns {void}
-   * Wenn der Treibstoff leer ist, fällt Pepe automatisch zu Boden.
-   */
-  updateFuel() {
-    if (!this.character.isFlying) return;
-    let currentFuel = this.coinBar.percentage;
-    currentFuel -= 0.0375;
-    if (currentFuel <= 0) {
-      this.handleFuelDepletion();
-    } else {
-      this.coinBar.setPercentage(currentFuel);
-    }
-  }
-
-  handleFuelDepletion() {
-    this.coinBar.setPercentage(0);
-    if (this.character.isFlying) this.character.toggleFlying();
-    if (this.character.currentWeapon === "broom")
-      this.character.currentWeapon = "uzi";
-  }
-
-  /**
-   * Richtet den fliegenden Charakter in Richtung des Mauszeigers (Fadenkreuz) aus.
-   * @returns {void}
-   */
-  updateCharacterAngle() {
-    if (!this.character.isFlying) return;
-    const worldMousePos = this.getWorldMousePosition();
-    const charCenter = this.getCharacterCenter();
-    const delta = {
-      x: worldMousePos.x - charCenter.x,
-      y: worldMousePos.y - charCenter.y,
-    };
-    this.character.worldAngle = Math.atan2(delta.y, delta.x);
-    this.character.otherDirection = delta.x < 0;
-    this.setRenderAngle(delta);
-  }
-
-  getWorldMousePosition() {
-    return {
-      x: mousePosition.x - this.camera_x - this.shake_x,
-      y: mousePosition.y - this.shake_y,
-    };
-  }
-
-  getCharacterCenter() {
-    return {
-      x: this.character.x + this.character.width / 2,
-      y: this.character.y + this.character.height / 2,
-    };
-  }
-
-  setRenderAngle(delta) {
-    if (this.character.otherDirection)
-      this.character.angle = Math.atan2(delta.y, -delta.x);
-    else this.character.angle = Math.atan2(delta.y, delta.x);
   }
 
   /**
@@ -257,7 +185,6 @@ class World {
     this.shotgun_sound.volume = volume;
     this.chicken_dead_sound.volume = volume;
     this.coin_sound.volume = volume;
-    this.gatling_sound.volume = volume;
 
     if (this.character) {
       this.character.updateVolume(volume);
@@ -278,31 +205,25 @@ class World {
   collectCoin(index) {
     this.coins.splice(index, 1);
     this.score += 50;
-    this.checkHighscore();
     this.playCoinSound();
-    this.updateFuelOnCoinCollect();
-  }
 
-  playCoinSound() {
-    let sound = this.coin_sound.cloneNode(true);
-    sound.volume = this.volume;
-    sound.play().catch(() => {});
-  }
-
-  updateFuelOnCoinCollect() {
     let newPercentage = this.coinBar.percentage + 20;
     if (newPercentage >= 100) {
-      newPercentage = 100;
-      this.activateBroomIfPossible();
+      newPercentage = 0;
+      this.character.energy = Math.min(this.character.energy + 25, 100);
+      this.statusBar.setPercentage(this.character.energy);
     }
     this.coinBar.setPercentage(newPercentage);
   }
 
-  activateBroomIfPossible() {
-    if (!this.character.isFlying) {
-      this.character.currentWeapon = "broom";
-      this.character.toggleFlying();
-    }
+  /**
+   * Spielt den Sound ab, der beim Einsammeln einer Münze ertönt.
+   * @returns {void}
+   */
+  playCoinSound() {
+    let sound = this.coin_sound.cloneNode(true);
+    sound.volume = this.volume;
+    sound.play().catch(() => {});
   }
 
   /**
@@ -321,6 +242,12 @@ class World {
     );
   }
 
+  /**
+   * Filtert ein Array nach einer X-Koordinate, um Objekte außerhalb des Bildschirms zu entfernen.
+   * @param {MovableObject[]} array - Das zu filternde Array.
+   * @param {number} boundary - Die X-Grenze.
+   * @returns {MovableObject[]} Das gefilterte Array.
+   */
   filterByBoundary(array, boundary) {
     return array.filter((obj) => {
       const keep = obj.x > boundary;
@@ -329,6 +256,12 @@ class World {
     });
   }
 
+  /**
+   * Filtert Feinde nach einer X-Koordinate (ausgenommen Endboss).
+   * @param {MovableObject[]} array - Das zu filternde Gegner-Array.
+   * @param {number} boundary - Die X-Grenze.
+   * @returns {MovableObject[]} Das gefilterte Array.
+   */
   filterEnemiesByBoundary(array, boundary) {
     return array.filter((enemy) => {
       if (enemy instanceof Endboss) return true;
@@ -338,6 +271,12 @@ class World {
     });
   }
 
+  /**
+   * Filtert Wurfobjekte, entfernt gelöschte oder abgefallene Flaschen.
+   * @param {MovableObject[]} array - Das zu filternde Wurfobjekt-Array.
+   * @param {number} boundary - Die X-Grenze.
+   * @returns {MovableObject[]} Das gefilterte Array.
+   */
   filterThrowableObjects(array, boundary) {
     return array.filter((obj) => {
       const keep = obj.x > boundary && obj.y < 600 && !obj.toDelete;
@@ -379,16 +318,6 @@ class World {
       let y = this.character.y + this.character.height - 10;
 
       this.particles.push(new Particle(x, y));
-    }
-  }
-
-  /**
-   * Prüft kontinuierlich, ob der aktuelle Punktestand den Highscore übersteigt.
-   * @returns {void}
-   */
-  checkHighscore() {
-    if (this.score > this.highscore) {
-      this.highscore = this.score;
     }
   }
 
@@ -441,11 +370,16 @@ class World {
   handleBackwardMovement(deltaTime) {
     if (this.isPushingBack) return;
     this.updateBackwardRunTime(deltaTime);
-    if (this.backwardRunTime > 2000) {
+    if (this.backwardRunTime > 1000) {
       this.triggerPushback();
     }
   }
 
+  /**
+   * Aktualisiert die Zeit, die der Spieler kontinuierlich rückwärts läuft.
+   * @param {number} deltaTime - Die vergangene Zeit seit dem letzten Frame in Sekunden.
+   * @returns {void}
+   */
   updateBackwardRunTime(deltaTime) {
     const BACKWARD_LIMIT_X = -100;
     if (this.keyboard.LEFT && this.character.x < BACKWARD_LIMIT_X) {
@@ -455,6 +389,10 @@ class World {
     }
   }
 
+  /**
+   * Löst den Pushback-Effekt aus, wenn der Spieler zu lange am linken Rand steht.
+   * @returns {void}
+   */
   triggerPushback() {
     this.isPushingBack = true;
     this.isShowingWrongWay = true;

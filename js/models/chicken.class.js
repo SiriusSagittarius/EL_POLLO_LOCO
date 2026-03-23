@@ -41,6 +41,11 @@ class Chicken extends MovableObject {
     this.updateAnimation(deltaTime);
   }
 
+  /**
+   * Aktualisiert die horizontale Bewegung des Huhns.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame in Sekunden.
+   * @returns {void}
+   */
   updateMovement(deltaTime) {
     if (this.world && this.world.character) {
       if (this.x > this.world.character.x + 20) {
@@ -53,6 +58,11 @@ class Chicken extends MovableObject {
     }
   }
 
+  /**
+   * Aktualisiert die Animation des Huhns.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame in Sekunden.
+   * @returns {void}
+   */
   updateAnimation(deltaTime) {
     this.animationTimer += deltaTime;
     if (this.animationTimer > 0.2) {

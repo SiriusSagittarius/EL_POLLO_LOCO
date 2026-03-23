@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: events.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: events.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Überprüft, ob das aktuelle Gerät ein mobiles Gerät ist.
+ * @returns {boolean} True, wenn ein mobiles Gerät erkannt wird.
+ */
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  );
+}
+
+/**
+ * Bindet die Touch-Events an die Buttons der mobilen Steuerung.
+ * @returns {void}
+ */
+function bindTouchEvents() {
+  const bindBtn = (id, key) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    const press = (e) => {
+      e.preventDefault();
+      keyboard[key] = true;
+    };
+
+    const release = (e) => {
+      e.preventDefault();
+      keyboard[key] = false;
+    };
+
+    btn.addEventListener("touchstart", press, { passive: false });
+    btn.addEventListener("mousedown", press);
+
+    btn.addEventListener("touchend", release, { passive: false });
+    btn.addEventListener("mouseup", release);
+    btn.addEventListener("mouseleave", release);
+  };
+
+  bindBtn("btnLeft", "LEFT");
+  bindBtn("btnRight", "RIGHT");
+  bindBtn("btnJump", "SPACE");
+  bindBtn("btnShoot", "D");
+  bindBtn("btnThrow", "S");
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.code === "ArrowRight") keyboard.RIGHT = true;
+  if (e.code === "ArrowLeft") keyboard.LEFT = true;
+  if (e.code === "ArrowUp") keyboard.UP = true;
+  if (e.code === "ArrowDown") keyboard.DOWN = true;
+  if (e.code === "Space") keyboard.SPACE = true;
+  if (e.code === "KeyD") keyboard.D = true;
+  if (e.code === "KeyF") keyboard.F = true;
+  if (e.code === "KeyS") keyboard.S = true;
+
+  if (e.code === "Escape" || e.code === "KeyP") {
+    if (world) {
+      if (document.getElementById("optionsMenu").style.display === "flex") {
+        resumeGame();
+      } else {
+        pauseGame();
+      }
+    }
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.code === "ArrowRight") keyboard.RIGHT = false;
+  if (e.code === "ArrowLeft") keyboard.LEFT = false;
+  if (e.code === "ArrowUp") keyboard.UP = false;
+  if (e.code === "ArrowDown") keyboard.DOWN = false;
+  if (e.code === "Space") keyboard.SPACE = false;
+  if (e.code === "KeyD") keyboard.D = false;
+  if (e.code === "KeyF") keyboard.F = false;
+  if (e.code === "KeyS") keyboard.S = false;
+});
+
+window.addEventListener("mousedown", (e) => {
+  if (e.button === 0) keyboard.D = true;
+  if (e.button === 2) keyboard.SPACE = true;
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (e.button === 0) keyboard.D = false;
+  if (e.button === 2) keyboard.SPACE = false;
+});
+
+window.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundObject.html">BackgroundObject</a></li><li><a href="Bullet.html">Bullet</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="CoinBar.html">CoinBar</a></li><li><a href="CollisionManager.html">CollisionManager</a></li><li><a href="CombatManager.html">CombatManager</a></li><li><a href="Durango.html">Durango</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="EndbossBar.html">EndbossBar</a></li><li><a href="Explosion.html">Explosion</a></li><li><a href="LevelManager.html">LevelManager</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="Particle.html">Particle</a></li><li><a href="SalsaBottle.html">SalsaBottle</a></li><li><a href="ShellCasing.html">ShellCasing</a></li><li><a href="SmallChicken.html">SmallChicken</a></li><li><a href="StatusBar.html">StatusBar</a></li><li><a href="ThrowableBottle.html">ThrowableBottle</a></li><li><a href="World.html">World</a></li><li><a href="WorldRenderer.html">WorldRenderer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#backToMenu">backToMenu</a></li><li><a href="global.html#bindTouchEvents">bindTouchEvents</a></li><li><a href="global.html#changeVolume">changeVolume</a></li><li><a href="global.html#checkEndGame">checkEndGame</a></li><li><a href="global.html#clearAllIntervals">clearAllIntervals</a></li><li><a href="global.html#closeOptions">closeOptions</a></li><li><a href="global.html#createAndPlayVideo">createAndPlayVideo</a></li><li><a href="global.html#enterFullscreen">enterFullscreen</a></li><li><a href="global.html#exitGame">exitGame</a></li><li><a href="global.html#finishGameAndReload">finishGameAndReload</a></li><li><a href="global.html#hideCrosshair">hideCrosshair</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isMobile">isMobile</a></li><li><a href="global.html#pauseGame">pauseGame</a></li><li><a href="global.html#playIntroVideo">playIntroVideo</a></li><li><a href="global.html#playOutroVideo">playOutroVideo</a></li><li><a href="global.html#playOutroVideoAndShowFinish">playOutroVideoAndShowFinish</a></li><li><a href="global.html#renderAllScreens">renderAllScreens</a></li><li><a href="global.html#renderFinishScreen">renderFinishScreen</a></li><li><a href="global.html#renderGameOverScreen">renderGameOverScreen</a></li><li><a href="global.html#renderHelpMenu">renderHelpMenu</a></li><li><a href="global.html#renderLoadingScreen">renderLoadingScreen</a></li><li><a href="global.html#renderOptionsMenu">renderOptionsMenu</a></li><li><a href="global.html#renderOverlay">renderOverlay</a></li><li><a href="global.html#renderPauseButton">renderPauseButton</a></li><li><a href="global.html#renderPauseMenu">renderPauseMenu</a></li><li><a href="global.html#renderStartScreen">renderStartScreen</a></li><li><a href="global.html#renderTouchControls">renderTouchControls</a></li><li><a href="global.html#renderWinScreen">renderWinScreen</a></li><li><a href="global.html#restartGame">restartGame</a></li><li><a href="global.html#resumeGame">resumeGame</a></li><li><a href="global.html#showCrosshair">showCrosshair</a></li><li><a href="global.html#showFinishScreen">showFinishScreen</a></li><li><a href="global.html#showOptions">showOptions</a></li><li><a href="global.html#showStoryScreen">showStoryScreen</a></li><li><a href="global.html#startGame">startGame</a></li><li><a href="global.html#startGameSequence">startGameSequence</a></li><li><a href="global.html#startPreloading">startPreloading</a></li><li><a href="global.html#toggleFullscreen">toggleFullscreen</a></li><li><a href="global.html#toggleHelp">toggleHelp</a></li><li><a href="global.html#toggleMute">toggleMute</a></li><li><a href="global.html#toggleTouchControls">toggleTouchControls</a></li><li><a href="global.html#unlockAudio">unlockAudio</a></li><li><a href="global.html#updateTouchToggleIcon">updateTouchToggleIcon</a></li><li><a href="global.html#updateVolumeUI">updateVolumeUI</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Sun Mar 22 2026 23:40:46 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

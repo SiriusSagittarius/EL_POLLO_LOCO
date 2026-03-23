@@ -12,9 +12,6 @@ class WorldRenderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
 
-    this.flashImage = new Image();
-    this.flashImage.src =
-      "img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png";
     this.bottleIcon = new Image();
     this.bottleIcon.src = "img/6_salsa_bottle/1_salsa_bottle_on_ground.png";
   }
@@ -66,7 +63,6 @@ class WorldRenderer {
     this.drawParticles();
     this.drawObjects(this.world.coins);
     this.drawObjects(this.world.salsaBottles);
-    this.drawObjects(this.world.energyBalls);
   }
 
   /**
@@ -89,7 +85,6 @@ class WorldRenderer {
     this.drawScoreAndBottles();
     this.drawLevelInfo();
     if (this.world.isShowingWrongWay) this.drawWrongWayMessage();
-    this.drawIngameTip();
   }
 
   /**
@@ -117,41 +112,6 @@ class WorldRenderer {
   }
 
   /**
-   * Zeichnet den In-Game-Tipp, falls er aktiv ist.
-   * @returns {void}
-   */
-  drawIngameTip() {
-    if (!this.world.showPepistolTip) return;
-
-    const tipText1 =
-      'Tipp: Durch die magischen Uzis verwandelt sich Pepe beim Schießen in "Pepistol".';
-    const tipText2 =
-      "Er vollführt wilde Aktionen, wenn man das Mausrad bewegt!";
-
-    this.ctx.save();
-
-    this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-    const boxWidth = 800;
-    const boxHeight = 100;
-    const boxX = (this.canvas.width - boxWidth) / 2;
-    const boxY = this.canvas.height - boxHeight - 20;
-    this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-    this.ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "bold 16px sans-serif";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(tipText1, this.canvas.width / 2, boxY + 40);
-    this.ctx.font = "16px sans-serif";
-    this.ctx.fillText(tipText2, this.canvas.width / 2, boxY + 70);
-
-    this.ctx.restore();
-  }
-
-  /**
    * Hilfsfunktion zum Zeichnen von Objekt-Arrays.
    * @param {MovableObject[]} objects - Das zu zeichnende Array.
    */
@@ -170,14 +130,19 @@ class WorldRenderer {
   drawObjectsWithParallax(objects) {
     objects.forEach((bgo) => {
       if (this.isVisible(bgo) && bgo.img) {
-        const parallaxOffset = this.world.camera_x * (bgo.parallaxFactor - 1);
-        this.ctx.drawImage(
-          bgo.img,
-          bgo.x + parallaxOffset,
-          bgo.y,
-          bgo.width,
-          bgo.height,
-        );
+        const pFactor =
+          bgo.parallaxFactor !== undefined ? bgo.parallaxFactor : 1;
+        const parallaxOffset = this.world.camera_x * (pFactor - 1);
+
+        if (!isNaN(parallaxOffset) && !isNaN(bgo.x)) {
+          this.ctx.drawImage(
+            bgo.img,
+            bgo.x + parallaxOffset,
+            bgo.y,
+            bgo.width,
+            bgo.height,
+          );
+        }
       }
     });
   }
@@ -210,21 +175,13 @@ class WorldRenderer {
   drawLevelInfo() {
     if (this.world.levelManager.bossSpawned) {
       this.addToMap(this.world.endbossBar);
-    } else {
-      this.ctx.font = "30px sans-serif";
-      this.ctx.textAlign = "center";
-      const time =
-        this.world.levelManager.maxLevelTime -
-        this.world.levelManager.levelTimer;
-      this.ctx.fillText(
-        `Level: ${this.world.levelManager.level} | Zeit: ${time}s`,
-        360,
-        50,
-      );
-      this.ctx.textAlign = "start";
     }
   }
 
+  /**
+   * Zeichnet eine Warnmeldung, wenn der Spieler in die falsche Richtung läuft.
+   * @returns {void}
+   */
   drawWrongWayMessage() {
     this.ctx.save();
     this.ctx.font = "bold 40px sans-serif";
@@ -270,34 +227,6 @@ class WorldRenderer {
       }
 
       this.ctx.rotate(mo.angle);
-
-      if (mo instanceof Character && mo.impaledChicken) {
-        this.ctx.save();
-        this.ctx.translate(120, 1);
-
-        let isFlashing =
-          new Date().getTime() - this.world.chickenFlashTime < 100;
-        if (isFlashing) this.ctx.filter = "brightness(200%)";
-
-        let chickenAnimIndex =
-          Math.floor(new Date().getTime() / 500) %
-          mo.IMPALED_CHICKEN_IMAGES.length;
-        let chickenImgPath = mo.IMPALED_CHICKEN_IMAGES[chickenAnimIndex];
-        let chickenImg = mo.imageCache[chickenImgPath];
-
-        if (chickenImg) {
-          this.ctx.save();
-          this.ctx.scale(-1, 1);
-          this.ctx.drawImage(chickenImg, -75, -75, 150, 150);
-          this.ctx.restore();
-        }
-        this.ctx.filter = "none";
-
-        if (isFlashing && this.flashImage.complete) {
-          this.ctx.drawImage(this.flashImage, -40, -40, 80, 80);
-        }
-        this.ctx.restore();
-      }
     }
 
     try {

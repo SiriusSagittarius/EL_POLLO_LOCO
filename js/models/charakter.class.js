@@ -10,20 +10,7 @@ class Character extends MovableObject {
   speed = 200; // pixels per second
   otherDirection = false;
   isShooting = false;
-  isFlying = false;
-  isUpsideDown = false;
-  isRotating = false;
-  currentWeapon = "uzi";
-  isUziForward = false;
-  isUziWheelUp = false;
-  isUziWheelDown = false;
-  hasUzi = false;
   bottles = 0;
-  impaledChicken = false;
-  shotsWithChicken = 0;
-  isWheelUp = false;
-  isWheelDown = false;
-  worldAngle = 0;
   offset = {
     top: 120,
     bottom: 30,
@@ -73,65 +60,6 @@ class Character extends MovableObject {
     "img/2_character_pepe/6_shooting/shotgun/5.png",
   ];
 
-  IMAGES_UZI_SHOT = [
-    "img/2_character_pepe/6_shooting/uzi/shot/1.png",
-    "img/2_character_pepe/6_shooting/uzi/shot/2.png",
-  ];
-  IMAGES_UZI_SHOTWALK = [
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/0.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/1.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/2.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/3.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/4.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/5.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/6.png",
-    "img/2_character_pepe/6_shooting/uzi/shotwalk/7.png",
-  ];
-  IMAGES_UZI_WHEEL_UP = [
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/00.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/01.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/02.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/03.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/04.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/05.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/1/06.png",
-  ];
-  IMAGES_UZI_WHEEL_DOWN = [
-    "img/2_character_pepe/6_shooting/uzi/wheel/2/1.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/2/2.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/2/3.png",
-    "img/2_character_pepe/6_shooting/uzi/wheel/2/4.png",
-  ];
-
-  IMAGES_FLYING = ["img/2_character_pepe/8_flying/fly/fly.png"];
-  IMAGES_FLYING_FIRE = [
-    "img/2_character_pepe/8_flying/flyfire/1.png",
-    "img/2_character_pepe/8_flying/flyfire/2.png",
-    "img/2_character_pepe/8_flying/flyfire/4.png",
-    "img/2_character_pepe/8_flying/flyfire/5.png",
-  ];
-  IMAGES_FLYING_UP = ["img/2_character_pepe/8_flying/fly/up.png"];
-  IMAGES_FLYING_DOWN = ["img/2_character_pepe/8_flying/fly/down.png"];
-
-  IMPALED_CHICKEN_IMAGES = [
-    "img/3_enemies_chicken/chicken_sven/3_shot/1.png",
-    "img/3_enemies_chicken/chicken_sven/3_shot/2.png",
-  ];
-
-  IMAGES_WHEEL_UP = [
-    "img/2_character_pepe/8_flying/wheel/1.png",
-    "img/2_character_pepe/8_flying/wheel/2.png",
-    "img/2_character_pepe/8_flying/wheel/3.png",
-    "img/2_character_pepe/8_flying/wheel/4.png",
-  ];
-  IMAGES_WHEEL_DOWN = [
-    "img/2_character_pepe/8_flying/wheelfire/1d.png",
-    "img/2_character_pepe/8_flying/wheelfire/2d.png",
-    "img/2_character_pepe/8_flying/wheelfire/3d.png",
-    "img/2_character_pepe/8_flying/wheelfire/4d.png",
-    "img/2_character_pepe/8_flying/wheelfire/5d.png",
-  ];
-
   IMAGES_HURT = [
     "img/2_character_pepe/4_hurt/H-41.png",
     "img/2_character_pepe/4_hurt/H-42.png",
@@ -150,26 +78,14 @@ class Character extends MovableObject {
 
   jump_sound = new Audio("audio/jump.mp3");
   hurt_sound = new Audio("audio/hurt.mp3");
-  broom_sound = new Audio("audio/besenpower.mp3");
 
+  /**
+   * Erzeugt eine Instanz des Spielcharakters.
+   */
   constructor() {
-    /**
-     * Erzeugt eine Instanz des Spielcharakters.
-     */
     super();
     this.loadImage("img/2_character_pepe/1_idle/idle/I-1.png");
     this.loadImages(this.IMAGES_IDLE);
-    this.loadImages(this.IMAGES_FLYING_FIRE);
-    this.broom_sound.loop = true;
-    this.loadImages(this.IMAGES_FLYING_UP);
-    this.loadImages(this.IMAGES_FLYING_DOWN);
-    this.loadImages(this.IMAGES_WHEEL_UP);
-    this.loadImages(this.IMAGES_WHEEL_DOWN);
-    this.loadImages(this.IMPALED_CHICKEN_IMAGES);
-    this.loadImages(this.IMAGES_UZI_SHOT);
-    this.loadImages(this.IMAGES_UZI_SHOTWALK);
-    this.loadImages(this.IMAGES_UZI_WHEEL_UP);
-    this.loadImages(this.IMAGES_UZI_WHEEL_DOWN);
     this.gravityEnabled = true;
   }
 
@@ -188,8 +104,7 @@ class Character extends MovableObject {
    * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
    */
   updateMovement(deltaTime) {
-    if (this.isFlying) this.handleFlyingMovement(deltaTime);
-    else this.handleGroundMovement(deltaTime);
+    this.handleGroundMovement(deltaTime);
   }
 
   /**
@@ -207,17 +122,6 @@ class Character extends MovableObject {
     }
     if (this.world && this.world.keyboard.SPACE && !this.isAboveGround()) {
       this.jump();
-    }
-  }
-
-  /**
-   * Behandelt die Bewegung in der Luft (Flugmodus).
-   * @param {number} deltaTime - Die Zeit seit dem letzten Frame.
-   */
-  handleFlyingMovement(deltaTime) {
-    if (this.world && this.world.keyboard.SPACE) {
-      this.x += Math.cos(this.worldAngle) * this.speed * 2 * deltaTime;
-      this.y += Math.sin(this.worldAngle) * this.speed * 2 * deltaTime;
     }
   }
 
@@ -242,25 +146,8 @@ class Character extends MovableObject {
   getAnimationImages() {
     if (this.isDead()) return this.IMAGES_DEAD;
     if (this.isHurt()) return this.IMAGES_HURT;
-    if (this.isFlying) return this.getFlyingAnimationImages();
     if (this.isAboveGround()) return this.IMAGES_JUMPING;
     return this.getGroundAnimationImages();
-  }
-
-  /**
-   * Ermittelt die Animation für den Flugmodus.
-   * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
-   */
-  getFlyingAnimationImages() {
-    if (this.isWheelUp) return this.IMAGES_WHEEL_UP;
-    if (this.isWheelDown) return this.IMAGES_WHEEL_DOWN;
-    if (this.isShooting) return this.IMAGES_FLYING_FIRE;
-    if (this.world && this.world.keyboard.SPACE) {
-      const vDir = Math.sin(this.worldAngle);
-      if (vDir < -0.1) return this.IMAGES_FLYING_UP;
-      if (vDir > 0.1) return this.IMAGES_FLYING_DOWN;
-    }
-    return this.IMAGES_FLYING;
   }
 
   /**
@@ -268,13 +155,6 @@ class Character extends MovableObject {
    * @returns {string[]} Das Array mit den Bildpfaden für die Animation.
    */
   getGroundAnimationImages() {
-    if (this.isUziWheelUp) return this.IMAGES_UZI_WHEEL_UP;
-    if (this.isUziWheelDown) return this.IMAGES_UZI_WHEEL_DOWN;
-    if (this.isUziForward) {
-      const isMoving =
-        this.world && (this.world.keyboard.RIGHT || this.world.keyboard.LEFT);
-      return isMoving ? this.IMAGES_UZI_SHOTWALK : this.IMAGES_UZI_SHOT;
-    }
     if (this.isShooting) return this.IMAGES_SHOOTING;
     if (this.world && (this.world.keyboard.RIGHT || this.world.keyboard.LEFT)) {
       return this.IMAGES_WALKING;
@@ -308,7 +188,6 @@ class Character extends MovableObject {
   updateVolume(volume) {
     this.jump_sound.volume = volume;
     this.hurt_sound.volume = volume;
-    this.broom_sound.volume = volume;
   }
 
   /**
@@ -324,118 +203,6 @@ class Character extends MovableObject {
         this.isShooting = false;
       }, 500);
       return true;
-    }
-  }
-
-  /**
-   * Löst eine Feuerrad-Animation auf dem Besen aus (auf oder ab).
-   * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
-   * @returns {void}
-   */
-  triggerWheelAnimation(deltaY) {
-    if (this.isWheelUp || this.isWheelDown || this.isRotating) return;
-
-    this.currentImage = 0;
-    if (deltaY < 0) {
-      this.isWheelUp = true;
-      setTimeout(() => (this.isWheelUp = false), 400);
-    } else {
-      this.isWheelDown = true;
-      setTimeout(() => (this.isWheelDown = false), 500);
-    }
-  }
-
-  /**
-   * Löst die Uzi-Rundumschlag-Animation aus.
-   * @param {number} deltaY - Die Scroll-Richtung des Mausrads.
-   * @returns {void}
-   */
-  triggerUziWheelAnimation(deltaY) {
-    if (this.isUziWheelUp || this.isUziWheelDown) return;
-
-    this.currentImage = 0;
-    if (deltaY < 0) {
-      this.isUziWheelUp = true;
-      setTimeout(() => (this.isUziWheelUp = false), 700);
-    } else {
-      this.isUziWheelDown = true;
-      setTimeout(() => (this.isUziWheelDown = false), 400);
-    }
-  }
-
-  /**
-   * Lässt den Charakter rotieren (z.B. bei speziellen Ausweichmanövern).
-   * @returns {void}
-   */
-  rotate() {
-    if (!this.isRotating) {
-      this.isRotating = true;
-      this.currentImage = 0;
-      setTimeout(() => {
-        this.isRotating = false;
-        this.isUpsideDown = false;
-      }, 1900);
-    }
-  }
-
-  /**
-   * Schaltet den Flugmodus (Besen) an oder aus.
-   * @returns {void}
-   */
-  toggleFlying() {
-    this.isFlying = !this.isFlying;
-    if (!this.isFlying) {
-      this.angle = 0;
-      this.currentImage = 0;
-      this.broom_sound.pause();
-    } else {
-      if (this.world) this.broom_sound.volume = this.world.volume;
-      this.broom_sound.play().catch(() => {});
-    }
-  }
-
-  /**
-   * Schaltet zwischen den primären Boden-Waffen (Uzi, Shotgun) um.
-   * @returns {void}
-   */
-  cycleWeapon() {
-    // Definiere die verfügbaren Waffen
-    const groundWeapons = ["uzi", "shotgun"];
-    const allWeapons = ["uzi", "shotgun", "broom"];
-
-    // Prüfe, ob der Besen Treibstoff hat
-    let availableWeapons = groundWeapons;
-    if (this.world && this.world.coinBar.percentage > 0) {
-      availableWeapons = allWeapons;
-    }
-
-    let currentIndex = availableWeapons.indexOf(this.currentWeapon);
-    if (currentIndex === -1) {
-      currentIndex = 0; // Fallback, falls die aktuelle Waffe nicht verfügbar ist
-    }
-
-    let nextIndex = (currentIndex + 1) % availableWeapons.length;
-    this.currentWeapon = availableWeapons[nextIndex];
-
-    // Sorge dafür, dass der Flugstatus zur Waffe passt
-    if (this.currentWeapon === "broom" && !this.isFlying) {
-      this.toggleFlying();
-    } else if (this.currentWeapon !== "broom" && this.isFlying) {
-      this.toggleFlying();
-    }
-  }
-
-  /**
-   * Führt einen schnellen Schuss mit der Uzi nach vorne aus.
-   * @returns {void}
-   */
-  shootUziForward() {
-    if (!this.isUziForward) {
-      this.isUziForward = true;
-      this.currentImage = 0;
-      setTimeout(() => {
-        this.isUziForward = false;
-      }, 200);
     }
   }
 }

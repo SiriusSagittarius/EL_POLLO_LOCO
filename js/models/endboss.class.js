@@ -67,6 +67,11 @@ class Endboss extends MovableObject {
     this.updateAnimation(deltaTime);
   }
 
+  /**
+   * Aktualisiert die Bewegungslogik des Endbosses.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame in Sekunden.
+   * @returns {void}
+   */
   updateMovement(deltaTime) {
     if (
       this.world &&
@@ -78,6 +83,11 @@ class Endboss extends MovableObject {
     }
   }
 
+  /**
+   * Aktualisiert die Animation des Endbosses.
+   * @param {number} deltaTime - Die Zeit seit dem letzten Frame in Sekunden.
+   * @returns {void}
+   */
   updateAnimation(deltaTime) {
     this.animationTimer += deltaTime;
     if (this.animationTimer < 0.2) return; // 5fps
