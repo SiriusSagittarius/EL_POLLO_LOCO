@@ -53,8 +53,43 @@ canvas {
   max-width: 200px;
 }
 
+/* Spezifische Anpassung für Buttons im Options- und Pausemenü (kleiner) */
+#optionsMenu .menu-btn {
+  padding: 6px 12px;
+  font-size: 16px;
+  width: 60%;
+  max-width: 160px;
+  margin: 5px;
+}
+
 .menu-btn:hover {
   background-color: darkorange;
+}
+
+/* Responsive Hauptüberschrift im Startmenü */
+.main-title {
+  position: absolute;
+  top: -1%;
+  width: 100%;
+  text-align: center;
+  font-family: sans-serif;
+  font-weight: 900;
+  font-size: clamp(32px, 8vw, 72px); /* Passt sich der Bildschirmbreite an */
+  color: orange;
+  text-shadow:
+    3px 3px 0 #000,
+    -1px -1px 0 #000,
+    1px -1px 0 #000;
+  z-index: 10;
+  pointer-events: none; /* Klicks gehen durch den Text durch */
+}
+
+/* Verhindert Überlappung auf kleinen Bildschirmen (Querformat) */
+@media (max-height: 480px) {
+  .main-title {
+    font-size: 36px;
+    top: 5px;
+  }
 }
 
 .vol-btn {

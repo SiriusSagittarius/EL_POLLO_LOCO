@@ -162,7 +162,7 @@ class LevelManager {
       let endChunk = Math.floor(requiredMaxX / this.bgWidth);
 
       for (let i = startChunk; i <= endChunk; i++) {
-        let chunkX = i * this.bgWidth;
+        let chunkX = i * (this.bgWidth - 1);
 
         let exists = this.world.backgroundObjects.some(
           (bgo) => bgo.x === chunkX && bgo.parallaxFactor === layer.parallax,

@@ -61,13 +61,26 @@ function init() {
   document.getElementById("overlay-container").innerHTML = renderAllScreens();
 
   // Update the toggle icon based on the saved setting.
-  let touchEnabled = localStorage.getItem("touchControlsEnabled") !== "false";
+  let touchEnabled =
+    localStorage.getItem("touchControlsEnabled") !== null
+      ? localStorage.getItem("touchControlsEnabled") === "true"
+      : isMobile();
   updateTouchToggleIcon(touchEnabled);
 
   document
     .getElementById("overlay-container")
     .insertAdjacentHTML("beforeend", renderLoadingScreen());
+  addImprintToOptions();
   startPreloading();
+
+  // Responsive Überschrift zum Startscreen hinzufügen
+  const startScreen = document.getElementById("startScreen");
+  if (startScreen) {
+    startScreen.insertAdjacentHTML(
+      "afterbegin",
+      '<h1 class="main-title">EL POLLO LOCO</h1>',
+    );
+  }
 
   updateVolumeUI();
 
@@ -141,7 +154,9 @@ function enterFullscreen() {
 function toggleTouchControls() {
   // 1. Bestimmt den NEUEN Zustand, indem der aktuelle aus dem Speicher umgedreht wird.
   let isCurrentlyEnabled =
-    localStorage.getItem("touchControlsEnabled") !== "false";
+    localStorage.getItem("touchControlsEnabled") !== null
+      ? localStorage.getItem("touchControlsEnabled") === "true"
+      : isMobile();
   let newIsEnabled = !isCurrentlyEnabled;
 
   // 2. Speichert den neuen Zustand.
@@ -230,7 +245,9 @@ function startGameSequence() {
 
       // Show touch controls if they are enabled
       let touchEnabled =
-        localStorage.getItem("touchControlsEnabled") !== "false";
+        localStorage.getItem("touchControlsEnabled") !== null
+          ? localStorage.getItem("touchControlsEnabled") === "true"
+          : isMobile();
       if (touchEnabled) {
         document.getElementById("touch-controls").style.display = "flex";
       }
@@ -279,8 +296,8 @@ function pauseGame() {
     document.getElementById("optionsTitle").style.display = "none";
     document.getElementById("optionsMenuBtn").style.display = "block";
     document.getElementById("optionsCloseBtn").innerText = "Weiter spielen";
-    document.getElementById("optionsBgPepe").style.display = "none";
-    document.getElementById("optionsBgLaputa").style.display = "none";
+    document.getElementById("optionsBgPepe").style.display = "block";
+    document.getElementById("optionsBgLaputa").style.display = "block";
 
     document.getElementById("btnMenu").style.display = "none";
   }
@@ -326,4 +343,24 @@ function backToMenu() {
 function clearAllIntervals() {
   intervalIds.forEach((id) => originalClearInterval(id));
   intervalIds = [];
+}
+
+/**
+ * Fügt den Impressum-Button dynamisch in das Optionsmenü ein.
+ */
+function addImprintToOptions() {
+  const closeBtn = document.getElementById("optionsCloseBtn");
+  if (closeBtn) {
+    const imprintBtn = document.createElement("button");
+    imprintBtn.className = "menu-btn";
+    imprintBtn.innerText = "Impressum";
+    imprintBtn.onclick = () => {
+      window.location.href = "imprint.html";
+    };
+
+    // Fügt den Button vor dem Schließen-Button ein
+    if (closeBtn.parentNode) {
+      closeBtn.parentNode.insertBefore(imprintBtn, closeBtn);
+    }
+  }
 }

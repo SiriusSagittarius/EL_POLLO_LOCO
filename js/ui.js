@@ -148,6 +148,14 @@ function createAndPlayVideo(videoId, src, skipText, zIndex, onComplete) {
   video.style.display = "block";
   video.style.opacity = "1";
   video.currentTime = 0;
+
+  if (typeof isMuted !== "undefined") {
+    video.muted = isMuted;
+  }
+  if (typeof globalVolume !== "undefined") {
+    video.volume = globalVolume;
+  }
+
   skipBtn.style.display = "block";
 
   let finished = false;

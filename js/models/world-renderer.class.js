@@ -173,9 +173,7 @@ class WorldRenderer {
    * Zeichnet die Level- und Zeitinformationen oder die Boss-Lebensleiste.
    */
   drawLevelInfo() {
-    if (this.world.levelManager.bossSpawned) {
-      this.addToMap(this.world.endbossBar);
-    }
+    // Boss-Lebensleiste oben rechts entfernt.
   }
 
   /**
@@ -282,6 +280,13 @@ class WorldRenderer {
         (mo.width - 44) * healthPercent,
         11,
       );
+
+      this.ctx.save();
+      this.ctx.font = "12px sans-serif";
+      this.ctx.fillStyle = "white";
+      this.ctx.textAlign = "center";
+      this.ctx.fillText(Math.round(mo.energy) + "%", mo.x + mo.width / 2, mo.y + 52);
+      this.ctx.restore();
     } else {
       this.ctx.fillStyle = "red";
       this.ctx.fillRect(mo.x, mo.y - 10, mo.width, 5);
